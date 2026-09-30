@@ -15,7 +15,7 @@ Folia 是一款以全屏沉浸式歌词播放为核心的在线音乐播放器�
 
 ### 1. 设置同步重构 —— 以网易云账号 UID 为唯一检索依据（核心）
 
-- 删除上游「登录设备 / 全设备同步」概念与逻辑
+- 优化登陆凭证缓存与个性设置同步策略
 - 新增 `src/services/sync/syncIdentity.ts`：从网易云登录态提取 UID
 - `src/services/sync/syncClient.ts`：请求头注入 `X-Sync-UID`，服务端按 UID 隔离数据
 - 新增 `src/services/sync/syncCoordinator.ts`：登录后先拉取云端设置，云端无数据则推送本地设置完成初始化；登出 / 未登录时为纯本地模式
@@ -39,7 +39,7 @@ Folia 是一款以全屏沉浸式歌词播放为核心的在线音乐播放器�
 | Cloudflare Pages | 前端托管（`music.aikun-bili.top`，CNAME → `folia-music.pages.dev`） |
 | Vercel | 网易云 API（serverless 适配层，`maxDuration: 30`，依赖官方 npm 包 `@neteasecloudmusicapienhanced/api`） |
 | Cloudflare Worker + D1 | 设置同步服务（`sync.aikun-bili.top`，D1 binding `FOLIA_SYNC_DB`，令牌经 `wrangler secret` 配置） |
-| Warmup Worker | Cron `*/5` 每 5 分钟保活 NCM API 与同步 Worker（NCM 冷启动 18s+ → 1.5–3s） |
+| Warmup Worker | Cron `*/5` 每 5 分钟保活 NCM API 与同步 Worker（NCM 冷启动 18s+ → 1.5–3s）优化加载速度 |
 | Pages Functions | `functions/ncm-api`：同源代理，5xx / 网络失败自动重试 2 次，登录 Cookie 同源携带；`functions/sync-api`：同源代理，绕开 workers.dev 国内被墙问题 |
 
 - `vite.config.ts`：禁用 PWA 插件，根治 Service Worker 缓存导致的「卡旧加载页」；preview 为带 hash 的静态资源注入一年期 `immutable` 缓存，由 Cloudflare CDN 承担回源
@@ -50,7 +50,6 @@ Folia 是一款以全屏沉浸式歌词播放为核心的在线音乐播放器�
 
 - `vite.config.ts` 修复上游既有类型错误：`configurePreviewServer` 被误放在 preview 配置对象内（TS2353，且运行时被 Vite 忽略、CDN 缓存逻辑从未生效），封装为 `previewCacheHeadersPlugin()` 插件注册后功能真正生效
 - 敏感信息治理：同步令牌改为 `VITE_SYNC_TOKEN` 环境变量注入（未设置时同步自动禁用）；部署脚本经 `-SyncToken` 参数或 `$env:SYNC_TOKEN` 传入，缺失即报错；任何令牌不入库
-- 设置 → 帮助页下方添加部署署名「由愛君_aikun部署」（[了解此人](https://aikun-bili.top)）
 
 ## 部署与本地开发
 
