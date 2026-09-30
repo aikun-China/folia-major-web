@@ -41,8 +41,11 @@ const requestJson = async <T,>(
     path: string,
     init: RequestInit = {},
 ): Promise<T> => {
-    // 登录网易云后才携带 UID，服务端以此隔离各账号的设置数据
+    // 未登录网易云时为纯本地模式：拦截全部同步请求（仅 /health 供连接测试豁免）
     const syncUid = getCurrentSyncUid();
+    if (!syncUid && path !== '/health') {
+        throw new SyncClientError('Sync request skipped: not signed in to NetEase (local-only mode)', 0);
+    }
     const response = await fetch(buildUrl(config, path), {
         ...init,
         headers: {

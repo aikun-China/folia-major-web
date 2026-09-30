@@ -161,6 +161,10 @@ export const fetchRemoteSettingsIfNewer = async (
     localUpdatedAt: string | null,
     remoteState?: SyncRemoteState | null,
 ): Promise<SyncedSettingsRecord | null> => {
+    // 未登录网易云时不拉取远程设置（保持本地设置）
+    if (!getCurrentSyncUid()) {
+        return null;
+    }
     const config = getConfiguredSync();
     if (!config) {
         return null;
@@ -216,6 +220,10 @@ const saveRemoteThemeToLocalCache = async (
 };
 
 export const getSyncedThemeForSong = async (song: SongResult | null): Promise<DualTheme | null> => {
+    // 未登录网易云时不从云端拉取主题（仅使用本地缓存）
+    if (!getCurrentSyncUid()) {
+        return null;
+    }
     const config = getConfiguredSync();
     if (!config) {
         return null;
@@ -253,6 +261,10 @@ export const saveSyncedThemeForSong = async (
         await registerThemeSyncRecordForSong(song, source, updatedAt);
     }
     if (!config || !fingerprint) {
+        return false;
+    }
+    // 未登录网易云时主题仅保存在本地，不上传云端
+    if (!getCurrentSyncUid()) {
         return false;
     }
 
