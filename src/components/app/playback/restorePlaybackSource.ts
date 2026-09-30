@@ -220,7 +220,10 @@ export const restorePlaybackSourceForSong = async (
 
     const audioResult = await loadOnlineSongAudioSource(song, audioQuality, null);
     if (audioResult.kind === 'unavailable') {
-        setStatusMsg({ type: 'error', text: i18n.t('status.playbackFailed') });
+        setStatusMsg({
+            type: 'error',
+            text: i18n.t(audioResult.reason === 'network' ? 'status.playbackError' : 'status.playbackFailed'),
+        });
         return false;
     }
 

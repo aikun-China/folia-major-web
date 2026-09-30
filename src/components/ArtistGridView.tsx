@@ -1570,7 +1570,7 @@ const ArtistGridView: React.FC<ArtistGridViewProps> = ({
                             exit={{ scale: 0.95, y: 15 }}
                             transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
                             onClick={(e) => e.stopPropagation()}
-                            className={`max-w-xl w-full max-h-[70vh] rounded-3xl p-8 flex flex-col shadow-2xl text-left relative overflow-hidden ${cardBg}`}
+                            className={`max-w-xl w-full max-h-[70dvh] rounded-3xl p-8 flex flex-col shadow-2xl text-left relative overflow-hidden ${cardBg}`}
                         >
                             <button
                                 onClick={() => setShowFullBio(false)}

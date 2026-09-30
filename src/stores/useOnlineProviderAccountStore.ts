@@ -6,6 +6,7 @@ import type { MediaId, OnlineProviderId, ProviderCollection, ProviderUser } from
 export interface OnlineProviderAccountState {
     status: 'unknown' | 'authenticated' | 'anonymous' | 'error';
     user: ProviderUser | null;
+    verified: boolean;
     collections: ProviderCollection[];
     likedSongIds: MediaId[];
     /** Playlist-local row ids keyed by the global song hash/id; only providers that need them fill this. */
@@ -34,6 +35,7 @@ const getInitialProviderId = (): OnlineProviderId => {
 const emptyAccount = (): OnlineProviderAccountState => ({
     status: 'unknown',
     user: null,
+    verified: false,
     collections: [],
     likedSongIds: [],
     likedSongFileIds: {},

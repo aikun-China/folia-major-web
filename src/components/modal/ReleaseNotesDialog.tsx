@@ -47,7 +47,7 @@ const ReleaseNotesDialog: React.FC<ReleaseNotesDialogProps> = ({ isOpen, isDayli
         >
             <motion.div
                 {...overlayPanelMotionFor(calm)}
-                className={`relative max-h-[86vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border p-7 shadow-2xl ${
+                className={`relative max-h-[86dvh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border p-7 shadow-2xl ${
                     isDaylight ? 'border-zinc-200 bg-white' : 'border-zinc-800 bg-[#18181b]'
                 }`}
                 onClick={event => event.stopPropagation()}

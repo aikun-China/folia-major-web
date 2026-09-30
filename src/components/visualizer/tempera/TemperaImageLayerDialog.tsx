@@ -271,7 +271,7 @@ const TemperaImageLayerDialog: React.FC<TemperaImageLayerDialogProps> = ({
                 className="flex min-h-0 flex-col gap-4 rounded-2xl border border-dashed p-4"
                 style={{ borderColor: dragging ? tokens.textPrimary : 'transparent' }}
             >
-                <div className="max-h-[62vh] space-y-5 overflow-y-auto pr-1" style={temperaDialogTextVars(tokens)}>
+                <div className="max-h-[62dvh] space-y-5 overflow-y-auto pr-1" style={temperaDialogTextVars(tokens)}>
                     <div
                         className="space-y-3 rounded-2xl border p-4"
                         style={{ borderColor: tokens.line, backgroundColor: tokens.surface }}

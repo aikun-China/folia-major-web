@@ -160,6 +160,7 @@ export function useNeteaseLibrary({
                 updateProviderAccount('netease', {
                     status: 'authenticated',
                     user: profile,
+                    verified: true,
                     collections,
                     likedSongIds: nextLikedSongIds,
                     hydration: 'ready',

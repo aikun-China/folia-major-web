@@ -383,7 +383,7 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
             {isOpen && (
                 <motion.div
                     data-folia-keyboard-window="true"
-                    className={`fixed inset-0 z-[150] flex items-start justify-center px-4 pt-[18vh] ${hasClearBackdrop ? '' : 'backdrop-blur-md'}`}
+                    className={`fixed inset-0 z-[150] flex items-start justify-center px-4 pt-[18dvh] ${hasClearBackdrop ? '' : 'backdrop-blur-md'}`}
                     style={{
                         backgroundColor: hasClearBackdrop
                             ? (isDaylight ? 'rgba(250,250,249,0.12)' : 'rgba(0,0,0,0.16)')
@@ -476,7 +476,7 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
                             no measurement, no content-driven height. commandPaletteSizing.spec.ts guards it. */}
                         <div
                             data-testid="command-palette-body"
-                            className="h-[min(496px,50vh)] overflow-y-auto p-2"
+                            className="h-[min(496px,50dvh)] overflow-y-auto p-2"
                             onTouchStart={() => inputRef.current?.blur()}
                         >
                             <CommandPaletteSyntaxHints

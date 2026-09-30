@@ -6,7 +6,8 @@ import { migrateLyricDataRenderHints } from '../utils/lyrics/renderHints';
 import { loadOnlineLyricsState, markOnlineLyricsPureMusic, resolveOnlineLyrics, resolveOnlineLyricsPureMusic, saveOnlineLyricsState } from '../utils/onlineLyricsState';
 import { autoMatchBestLyric } from '../utils/lyrics/autoMatchBestLyric';
 import { createSafeObjectUrl } from '../utils/blobGuards';
-import type { AudioQualityPreference, MediaId } from '../types/onlineMusic';
+import type { AudioQualityPreference, MediaId, ProviderErrorCode } from '../types/onlineMusic';
+import { OnlineProviderError } from '../types/onlineMusic';
 import { omni } from './onlineMusic/omni';
 import { getSongResourceCacheKey } from './onlineMusic/resourceKeys';
 import { getCachedSongAudioBlob, getCachedSongReplayGain, getSongCacheWithLegacyMigration } from './onlineMusic/resourceCache';
@@ -15,13 +16,20 @@ import { getProviderSongMetadata } from './onlineMusic/songMetadata';
 import { useLyricSettingsStore } from '../stores/useLyricSettingsStore';
 import { saveLyricCacheSongMetadata } from './lyricExport/lyricCacheMetadata';
 
+const NETWORK_PLAYBACK_ERROR_CODES: ReadonlySet<ProviderErrorCode> = new Set(['network', 'invalid-response']);
+
+const classifyPlaybackFailure = (error: unknown): 'unavailable' | 'network' =>
+    error instanceof OnlineProviderError && !NETWORK_PLAYBACK_ERROR_CODES.has(error.code)
+        ? 'unavailable'
+        : 'network';
+
 export async function loadOnlineSongAudioSource(
     song: SongResult,
     audioQuality: AudioQualityPreference,
     prefetched: PrefetchedSongData | null
 ): Promise<
     | { kind: 'ok'; audioSrc: string; blobUrl?: string; replayGain?: ReplayGainInfo }
-    | { kind: 'unavailable' }
+    | { kind: 'unavailable'; reason: 'unavailable' | 'network' }
 > {
     const cachedAudioBlob = await getCachedSongAudioBlob(song);
     if (cachedAudioBlob) {
@@ -51,11 +59,11 @@ export async function loadOnlineSongAudioSource(
         source = await omni.getAudioSource(song, audioQuality);
     } catch (error) {
         console.warn('[OnlinePlayback] Provider audio source is temporarily unavailable', error);
-        return { kind: 'unavailable' };
+        return { kind: 'unavailable', reason: classifyPlaybackFailure(error) };
     }
     const url = toSafePlaybackUrl(source?.url);
     if (!url) {
-        return { kind: 'unavailable' };
+        return { kind: 'unavailable', reason: 'unavailable' };
     }
 
     const replayGain = applyOnlineAudioSourceMetadata(song, source?.replayGain).replayGain;

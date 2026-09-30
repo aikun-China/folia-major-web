@@ -558,10 +558,15 @@ export function usePlaybackQueueController({
             }
 
             if (preloadedOnlineAudioResult.kind === 'unavailable') {
+                setIsLyricsLoading(false);
+
+                if (preloadedOnlineAudioResult.reason === 'network') {
+                    setStatusMsg({ type: 'error', text: t('status.playbackError') });
+                    return;
+                }
+
                 const nextSong = getNextPlayableQueueSong(queueContext, song);
                 const canSkip = Boolean(nextSong) && skipCount < MAX_UNAVAILABLE_AUTO_SKIP_COUNT;
-
-                setIsLyricsLoading(false);
 
                 if (canSkip && nextSong) {
                     showTimedSkipPrompt('status.songUnavailablePrompt', () => {

@@ -280,7 +280,16 @@ export const neteaseProvider: OnlineMusicProvider = {
             const response = await neteaseApi.getSongUrl(toNeteaseId(song.id), mapQuality(quality));
             const raw = response?.data?.[0];
             const rawUrl = raw?.url;
-            if (!rawUrl) return null;
+            if (!rawUrl) {
+                if (raw?.code === 404) {
+                    throw new OnlineProviderError(
+                        'unavailable',
+                        `NetEase reports song ${song.id} is not playable (code 404)`,
+                        'netease',
+                    );
+                }
+                return null;
+            }
             const trackGain = toFiniteNumber(raw?.gain);
             return {
                 url: String(rawUrl).replace(/^http:/, 'https:'),

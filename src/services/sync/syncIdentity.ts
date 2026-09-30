@@ -17,8 +17,11 @@ export const setCurrentSyncUid = (uid: string | null) => {
     currentUid = uid;
 };
 
-// 从全局账号 store 解析当前网易云登录 UID（未登录返回 null）
+// 从全局账号 store 解析当前网易云登录 UID（未登录或未经服务端验证返回 null）
+// verified 门禁：只有本会话内通过 omni.getLoginStatus 交叉验证过的账号才允许参与同步，
+// 防止启动时快照恢复出的本地缓存身份（未经验证）触发自动同步。
 export const resolveNeteaseUidFromAccountStore = (): string | null => {
-    const user = useOnlineProviderAccountStore.getState().accounts.netease?.user;
-    return user?.id != null ? String(user.id) : null;
+    const account = useOnlineProviderAccountStore.getState().accounts.netease;
+    if (!account?.verified || account.user?.id == null) return null;
+    return String(account.user.id);
 };

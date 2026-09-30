@@ -119,7 +119,7 @@ const DraggableDebugWindow: React.FC<DraggableDebugWindowProps> = ({
                 dragMomentum={false}
                 dragElastic={0}
                 onDragEnd={settle}
-                className={`pointer-events-auto flex max-h-[calc(100vh-2rem)] flex-col rounded-2xl backdrop-blur-2xl font-mono ${shellClass}`}
+                className={`pointer-events-auto flex max-h-[calc(100dvh-2rem)] flex-col rounded-2xl backdrop-blur-2xl font-mono ${shellClass}`}
             >
                 <div
                     // `touch-none` so a pen or touch drag moves the window instead of scrolling the

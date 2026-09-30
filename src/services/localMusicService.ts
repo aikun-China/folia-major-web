@@ -28,6 +28,7 @@ import { getLocalLibraryAvailability } from './localLibraryAvailability';
 import { useLyricSettingsStore } from '../stores/useLyricSettingsStore';
 import { getLocalLyricFilePriority, isSameLocalLyricFormatOrder, normalizeLocalLyricFormatOrder, type LocalLyricFileFormat } from '../utils/lyrics/localLyricFormatOrder';
 import { isLocalFolderIgnored, normalizeLocalFolderPath, runLocalFolderMutation, setLocalFolderIgnored } from './localLibraryFolderIgnore';
+import { isAndroidUserAgent } from '../utils/platform';
 
 
 type EmbeddedMetadata = EmbeddedMetadataResult;
@@ -1310,7 +1311,14 @@ export function importLocalFilesViaInput(): Promise<LocalSong[]> {
         const input = document.createElement('input');
         input.type = 'file';
         input.multiple = true;
-        input.setAttribute('webkitdirectory', '');
+        // Android Chromium ignores webkitdirectory (the picker would drop the audio filter or
+        // return an unreadable tree URI), so use a filtered multi-file pick there instead;
+        // Firefox desktop still needs webkitdirectory because it lacks showDirectoryPicker.
+        if (isAndroidUserAgent()) {
+            input.accept = 'audio/*,.lrc';
+        } else {
+            input.setAttribute('webkitdirectory', '');
+        }
         input.style.display = 'none';
         let settled = false;
         const finish = (songs: LocalSong[]) => {

@@ -38,3 +38,13 @@ export const isAndroidShellTarget = (): boolean => (
     && navigator.userAgent.toLowerCase().includes('android')
     && isFoliaAndroidApp()
 );
+
+/**
+ * 纯 UA 级安卓判定（含普通安卓浏览器，不要求壳注入桥）。惰性求值：
+ * 目录上传（webkitdirectory）在安卓 Chromium 上不受支持，能力检测命不中这一点，
+ * 需要用 UA 在运行时区分"支持目录上传的桌面浏览器"与"安卓降级多选"。
+ */
+export const isAndroidUserAgent = (): boolean => (
+    typeof navigator !== 'undefined'
+    && navigator.userAgent.toLowerCase().includes('android')
+);

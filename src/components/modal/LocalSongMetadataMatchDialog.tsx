@@ -112,7 +112,7 @@ export const LocalSongMetadataMatchDialog = ({ song, assignment, isDaylight, onC
 
     return (
         <div data-folia-keyboard-window="true" className="fixed inset-0 z-[140] flex items-center justify-center bg-black/65 p-4 backdrop-blur-xl">
-            <div role="dialog" aria-modal="true" className={`${panelTheme} flex max-h-[82vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border shadow-2xl`}>
+            <div role="dialog" aria-modal="true" className={`${panelTheme} flex max-h-[82dvh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border shadow-2xl`}>
                 <header className="flex items-center justify-between border-b border-current/10 px-5 py-4">
                     <div className="min-w-0">
                         <h3 className="truncate text-lg font-bold">{t('localMusic.manualMetadataMatch')}</h3>
