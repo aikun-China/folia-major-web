@@ -29,6 +29,7 @@ import { AiHelpPromptModal } from './AiHelpPromptModal';
 import SettingsHelpActions from './SettingsHelpActions';
 import { openPonderNavigation } from '../../services/ponder/pagePonderTarget';
 import ReleaseNotesDialog from './ReleaseNotesDialog';
+import AndroidUpdateDialog from './settings/AndroidUpdateDialog';
 import { discordIconUrl, openDiscordInvite } from '../shared/discordCommunity';
 import meowImageUrl from '../../../build/miao.png';
 import type { LyricData } from '../../types';
@@ -50,7 +51,7 @@ import type { LyricApiStatus } from '../../types/lyricApi';
 import type { SongResult } from '../../types';
 import type { ThemeCacheSongKey } from '../../services/themeCache';
 import type { ThemeGenerationSource } from '../../services/themePreferences';
-import { isMacPlatform as isMac } from '../../utils/platform';
+import { isMacPlatform as isMac, isFoliaAndroidApp } from '../../utils/platform';
 import { HELP_TAB_PRIMARY_SHORTCUTS } from './userGuideContent';
 import { openCurrentPagePonder } from '../../services/ponder/pagePonderTarget';
 import { selectVisualizerSettingsSnapshot, useVisualizerSettingsStore } from '../../stores/useVisualizerSettingsStore';
@@ -407,6 +408,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     const [showGlobalLyricOffset, setShowGlobalLyricOffset] = useState(false);
     const [showAiHelpPrompt, setShowAiHelpPrompt] = useState(false);
     const [showReleaseNotes, setShowReleaseNotes] = useState(false);
+    const [isAndroidUpdateDialogOpen, setAndroidUpdateDialogOpen] = useState(false);
     const [versionCopied, setVersionCopied] = useState(false);
     const [stageAddressCopied, setStageAddressCopied] = useState(false);
     const [authorClickCount, setAuthorClickCount] = useState(0);
@@ -1042,7 +1044,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         || showLyricFilterSettings
         || showGlobalLyricOffset
         || showAiHelpPrompt
-        || showReleaseNotes;
+        || showReleaseNotes
+        || isAndroidUpdateDialogOpen;
 
     const closeAllSubviews = () => {
         if (shouldCloseModalOnSubviewBack) {
@@ -1055,6 +1058,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         setShowGlobalLyricOffset(false);
         setShowAiHelpPrompt(false);
         setShowReleaseNotes(false);
+        setAndroidUpdateDialogOpen(false);
     };
 
     useEffect(() => {
@@ -1360,6 +1364,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                                 <SettingsHelpActions
                                     onOpenReleaseNotes={() => setShowReleaseNotes(true)}
                                     onOpenPonder={openPonderNavigation}
+                                    onCheckAndroidUpdates={isFoliaAndroidApp() ? () => setAndroidUpdateDialogOpen(true) : undefined}
                                 />
 
                                 {/* Navigation - REMOVED requested items */}
@@ -2157,6 +2162,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 isDaylight={isDaylight}
                 theme={theme}
                 onClose={() => setShowReleaseNotes(false)}
+            />
+            <AndroidUpdateDialog
+                isOpen={isAndroidUpdateDialogOpen}
+                isDaylight={isDaylight}
+                onClose={() => setAndroidUpdateDialogOpen(false)}
             />
         </motion.div>
     );

@@ -16,6 +16,58 @@ declare global {
     };
   }
 
+  interface FoliaAndroidAppInfo {
+    versionName: string;
+    versionCode: number;
+    packageName: string;
+  }
+
+  interface FoliaAndroidDownloadProgress {
+    status: 'idle' | 'running' | 'paused' | 'success' | 'failed';
+    received: number;
+    total: number;
+  }
+
+  interface FoliaAndroidPlaybackSnapshot {
+    hasTrack: boolean;
+    playing: boolean;
+    title: string;
+    artist: string;
+    album: string;
+    durationSec: number;
+    positionSec: number;
+  }
+
+  interface FoliaAndroidImportFileInfo {
+    token: string;
+    name: string;
+    size: number;
+    mimeType: string;
+  }
+
+  /**
+   * Android WebView 壳（com.aikun.folia）注入的 JS 桥，即 window.foliaAndroid。
+   * 所有方法都是同步阻塞调用；返回 JSON 的方法在失败时返回 null 或空串。
+   * 网页端一律先经 isFoliaAndroidApp() 探测再使用。
+   */
+  interface FoliaAndroidBridge {
+    getAppInfo: () => string;
+    // ① 内置更新检测
+    downloadUpdate: (url: string, fileName: string) => boolean;
+    getDownloadProgress: () => string;
+    installDownloadedUpdate: () => boolean;
+    cancelUpdateDownload: () => boolean;
+    // ② 沉浸式全屏
+    setImmersiveMode: (enabled: boolean) => void;
+    // ③ audio/* 唤起导入
+    consumePendingAudioIntent: () => string | null;
+    readAudioChunk: (token: string, offset: number, length: number) => string;
+    // ④ 后台常驻播放
+    setPlaybackSnapshot: (snapshotJson: string) => void;
+    openBatteryOptimizationSettings: () => void;
+    openAppDetailsSettings: () => void;
+  }
+
   interface ElectronCacheDirectoryResult {
     path: string;
     isDefault: boolean;
@@ -823,6 +875,8 @@ declare global {
         onModLog: (callback: (entry: ModLogEntry) => void) => () => void;
       };
     };
+    /** Folia 安卓壳（APK）注入的原生桥，浏览器与 Electron 环境不存在。 */
+    foliaAndroid?: FoliaAndroidBridge;
   }
 }
 

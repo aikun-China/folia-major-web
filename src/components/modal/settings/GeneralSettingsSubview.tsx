@@ -1,5 +1,5 @@
 import React from 'react';
-import { Languages, LayoutList, Move } from 'lucide-react';
+import { Headphones, Languages, LayoutList, Maximize, Move } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useShallow } from 'zustand/react/shallow';
 import type { Theme } from '../../../types';
@@ -11,8 +11,10 @@ import PlayerBottomBarSection from './PlayerBottomBarSection';
 import HomeCardPositionSection from './HomeCardPositionSection';
 import { SettingsAnchor } from './navigation/SettingsAnchorContext';
 import SettingsSectionHeading from './navigation/SettingsSectionHeading';
+import { useAndroidImmersiveStore } from '../../../stores/useAndroidImmersiveStore';
 import { useHomeLayoutSettingsStore } from '../../../stores/useHomeLayoutSettingsStore';
 import { useSettingsModalStore } from '../../../stores/useSettingsModalStore';
+import { isFoliaAndroidApp } from '../../../utils/platform';
 
 // src/components/modal/settings/GeneralSettingsSubview.tsx
 // Global app preferences that should stay independent from playback and desktop-only settings.
@@ -56,6 +58,13 @@ const GeneralSettingsSubview: React.FC<GeneralSettingsSubviewProps> = ({
         handleToggleHomeTabRadio: state.handleToggleHomeTabRadio,
         handleToggleHomeTabAlbums: state.handleToggleHomeTabAlbums,
         handleToggleHomeTabLocal: state.handleToggleHomeTabLocal,
+    })));
+    const {
+        androidImmersiveEnabled,
+        handleToggleAndroidImmersive,
+    } = useAndroidImmersiveStore(useShallow(state => ({
+        androidImmersiveEnabled: state.androidImmersiveEnabled,
+        handleToggleAndroidImmersive: state.handleToggleAndroidImmersive,
     })));
 
     const getResolvedLanguageLabel = (): string => {
@@ -201,6 +210,59 @@ const GeneralSettingsSubview: React.FC<GeneralSettingsSubviewProps> = ({
                     theme={theme}
                 />
             </SettingsAnchor>
+
+            {isFoliaAndroidApp() && (
+                <SettingsAnchor anchorId="androidImmersive" label={t('options.androidImmersive')}>
+                    <SettingsSectionHeading icon={Maximize} label={t('options.androidImmersive')} />
+                    <div className={`flex items-center justify-between p-4 rounded-xl border ${settingsCardClass}`}>
+                        <div className="space-y-1">
+                            <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                                {t('options.androidImmersive')}
+                            </div>
+                            <div className="text-[11px] opacity-50 max-w-[420px]" style={{ color: 'var(--text-secondary)' }}>
+                                {t('options.androidImmersiveDesc')}
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => handleToggleAndroidImmersive(!androidImmersiveEnabled)}
+                            className={`w-12 h-6 rounded-full p-1 transition-colors shrink-0 ${!androidImmersiveEnabled ? toggleOffBackgroundClass : ''}`}
+                            style={{ backgroundColor: androidImmersiveEnabled ? theme?.secondaryColor || 'rgba(114, 119, 134, 1)' : undefined }}
+                        >
+                            <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${androidImmersiveEnabled ? 'translate-x-6' : 'translate-x-0'}`} />
+                        </button>
+                    </div>
+                </SettingsAnchor>
+            )}
+
+            {isFoliaAndroidApp() && (
+                <SettingsAnchor anchorId="androidBackgroundPlayback" label={t('options.androidBackgroundPlayback')}>
+                    <SettingsSectionHeading icon={Headphones} label={t('options.androidBackgroundPlayback')} />
+                    <div className={`p-4 rounded-xl border space-y-3 ${settingsCardClass}`}>
+                        <div className="space-y-1">
+                            <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                                {t('options.androidBackgroundPlayback')}
+                            </div>
+                            <div className="text-[11px] opacity-50 max-w-[420px]" style={{ color: 'var(--text-secondary)' }}>
+                                {t('options.androidBackgroundPlaybackDesc')}
+                            </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            <button
+                                onClick={() => window.foliaAndroid?.openBatteryOptimizationSettings()}
+                                className={utilityGhostButtonClass}
+                            >
+                                {t('options.androidBatteryIgnore')}
+                            </button>
+                            <button
+                                onClick={() => window.foliaAndroid?.openAppDetailsSettings()}
+                                className={utilityGhostButtonClass}
+                            >
+                                {t('options.androidAppDetails')}
+                            </button>
+                        </div>
+                    </div>
+                </SettingsAnchor>
+            )}
 
             <PinnedCommandSettings
                 isDaylight={isDaylight}

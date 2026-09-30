@@ -1,5 +1,5 @@
 import React from 'react';
-import { Lightbulb, Sparkles } from 'lucide-react';
+import { Lightbulb, RefreshCw, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 // src/components/modal/SettingsHelpActions.tsx
@@ -7,9 +7,11 @@ import { useTranslation } from 'react-i18next';
 type SettingsHelpActionsProps = {
     onOpenReleaseNotes: () => void;
     onOpenPonder: () => void;
+    /** 安卓壳专用：检查 APK 更新（原生桥可用时由 SettingsModal 传入）。 */
+    onCheckAndroidUpdates?: () => void;
 };
 
-const SettingsHelpActions: React.FC<SettingsHelpActionsProps> = ({ onOpenReleaseNotes, onOpenPonder }) => {
+const SettingsHelpActions: React.FC<SettingsHelpActionsProps> = ({ onOpenReleaseNotes, onOpenPonder, onCheckAndroidUpdates }) => {
     const { t } = useTranslation();
 
     return (
@@ -40,6 +42,21 @@ const SettingsHelpActions: React.FC<SettingsHelpActionsProps> = ({ onOpenRelease
                     <span className="mt-0.5 block text-xs opacity-55">{t('help.ponderDescription')}</span>
                 </span>
             </button>
+            {onCheckAndroidUpdates && (
+                <button
+                    type="button"
+                    data-testid="help-check-android-updates"
+                    onClick={onCheckAndroidUpdates}
+                    className="flex items-center gap-3 rounded-2xl bg-white/5 p-4 text-left transition-colors hover:bg-white/10"
+                    style={{ color: 'var(--text-primary)' }}
+                >
+                    <RefreshCw size={19} className="shrink-0 opacity-75" aria-hidden="true" />
+                    <span>
+                        <span className="block text-sm font-semibold">{t('androidUpdate.title')}</span>
+                        <span className="mt-0.5 block text-xs opacity-55">{t('androidUpdate.entryDescription')}</span>
+                    </span>
+                </button>
+            )}
         </div>
     );
 };

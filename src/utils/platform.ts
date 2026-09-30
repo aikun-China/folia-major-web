@@ -22,3 +22,19 @@ export const isSecondaryModifierPressed = (event: KeyboardEvent): boolean => (
 
 /** Label for the primary modifier, for shortcut hints shown in the UI. */
 export const PRIMARY_MODIFIER_LABEL = isMacPlatform ? 'Cmd' : 'Ctrl';
+
+/**
+ * Folia 安卓壳（APK）探测：壳在页面加载前注入 window.foliaAndroid 桥，但为了容错
+ * （桥注入失败或脚本执行早于 onCreate 完成），运行时惰性探测而不是模块加载期快照。
+ */
+export const isFoliaAndroidApp = (): boolean => (
+    typeof window !== 'undefined'
+    && Boolean((window as typeof window & { foliaAndroid?: unknown; }).foliaAndroid)
+);
+
+/** 安卓壳下才参与渲染的通用判定（设置项、帮助页动作等）。 */
+export const isAndroidShellTarget = (): boolean => (
+    typeof navigator !== 'undefined'
+    && navigator.userAgent.toLowerCase().includes('android')
+    && isFoliaAndroidApp()
+);

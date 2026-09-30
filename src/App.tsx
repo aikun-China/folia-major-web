@@ -137,6 +137,9 @@ import StageSessionEmptyState from './components/app/stage/StageSessionEmptyStat
 import { useVisualizerRendererModel } from './components/visualizer/useVisualizerRendererModel';
 import { useVisualizerTunings } from './components/visualizer/useVisualizerTunings';
 import { usePlaybackRuntimeRefs } from './hooks/usePlaybackRuntimeRefs';
+import { useAndroidImmersiveController } from './hooks/useAndroidImmersiveController';
+import { useAndroidAudioIntent } from './hooks/useAndroidAudioIntent';
+import { useAndroidPlaybackBridge } from './hooks/useAndroidPlaybackBridge';
 import { useElectronWindowChrome } from './hooks/useElectronWindowChrome';
 import { useTransportCommandRefs } from './hooks/useTransportCommandRefs';
 import { useHomeProviderRefresh } from './hooks/useHomeProviderRefresh';
@@ -1464,6 +1467,22 @@ export default function App() {
         isNowPlayingControlDisabledRef,
     });
 
+    // APK 端：把播放快照推给原生前台服务（媒体通知卡片/锁屏控制），并接收原生传输命令
+    // （通知按钮、音频焦点丢失、耳机拔出）。与 useMediaSessionBridge 同一套显示轨道输入。
+    useAndroidPlaybackBridge({
+        audioRef,
+        getDisplayAudioElement: automix.getDisplayElement,
+        currentSong: displaySong,
+        playerState: displayPlayerState,
+        isNowPlayingStageActive,
+        unknownArtistLabel: t('ui.unknownArtist'),
+        mediaSessionPlayRef,
+        mediaSessionPauseRef,
+        mediaSessionPrevRef,
+        mediaSessionNextRef,
+        isNowPlayingControlDisabledRef,
+    });
+
     const {
         exportState,
         handleExportCommand,
@@ -1618,6 +1637,10 @@ export default function App() {
     const isNowPlayingControlDisabled = isNowPlayingStageActive;
 
     useElectronWindowChrome();
+    // APK 端：沉浸式全屏开关 + 浮层临时恢复状态栏（浏览器/Electron 端为空操作）
+    useAndroidImmersiveController();
+    // APK 端：audio/* 唤起导入本地曲库并刷新（冷启动一次 + 热启动事件驱动，浏览器/Electron 端为空操作）
+    useAndroidAudioIntent(onRefreshLocalSongs);
     const {
         isPlayerView,
         shouldPauseVisualizerBackground,

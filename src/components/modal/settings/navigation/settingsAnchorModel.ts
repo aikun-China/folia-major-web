@@ -25,6 +25,8 @@ export const SETTINGS_ANCHOR_DEFINITIONS = {
     playbackEntryView: { section: 'general', labelKey: 'options.playbackEntryView' },
     bottomUiSettings: { section: 'general', labelKey: 'options.bottomUiSettings' },
     pinnedCommands: { section: 'general', labelKey: 'options.pinnedCommands' },
+    // 仅 APK 客户端渲染（GeneralSettingsSubview 里条件挂载），桌面/纯浏览器端不会出现
+    androidImmersive: { section: 'general', labelKey: 'options.androidImmersive' },
 
     // PlaybackSettingsSubview (TransitionSettingsSection renders inside it)
     queueSettings: { section: 'playback', labelKey: 'options.queueSettings' },
