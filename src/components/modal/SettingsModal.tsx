@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import type { MotionValue } from 'framer-motion';
 import { X, Keyboard, Loader2, Check, AlertCircle, ChevronLeft, Download, ExternalLink, CircleHelp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useSupportsFinePointer } from '../../hooks/useSupportsFinePointer';
 import { getCacheUsageByCategory, clearCacheByCategory, clearAllData } from '../../services/db';
 import { DualTheme, StageStatus, StageSource, Theme, ThemeMode, type CadenzaTuning, type CappellaEmojiImage, type CappellaTuning, type FumeTuning, type NowPlayingConnectionStatus, type PartitaTuning, type ReplayGainMode, type TiltTuning, type StoredCustomLyricsFont, type VisualizerMode } from '../../types';
 import { getNavidromeConfig, saveNavidromeConfig, clearNavidromeConfig, hashPassword, navidromeApi, isNavidromeEnabled, setNavidromeEnabled, getCachedNavidromeServerProfile, refreshNavidromeServerProfile } from '../../services/navidromeService';
@@ -184,6 +185,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     customTheme,
 }) => {
     const { t } = useTranslation();
+    const supportsFinePointer = useSupportsFinePointer();
     // Track the press origin per overlay so nested subview backdrops do not overwrite each other.
     const overlayMouseDownTargetsRef = useRef(new WeakSet<HTMLDivElement>());
     const {
@@ -1281,7 +1283,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
             <motion.div
                 {...panelMotion}
                 transition={shellTransition}
-                className={`${glassBg} border ${borderColor} p-6 md:p-8 rounded-3xl ${activeTab === 'options' ? 'w-full md:max-w-4xl md:w-[900px] h-[90vh] md:h-[85vh]' : 'w-full md:max-w-lg'} relative shadow-2xl overflow-hidden flex flex-col max-h-[90vh] transition-all duration-300`}
+                className={`${glassBg} border ${borderColor} p-6 md:p-8 rounded-3xl ${activeTab === 'options' ? 'w-full md:max-w-4xl md:w-[900px] h-[90dvh] md:h-[85dvh]' : 'w-full md:max-w-lg'} relative shadow-2xl overflow-hidden flex flex-col max-h-[90dvh] transition-all duration-300`}
                 onClick={(event) => event.stopPropagation()}
             >
                 {/* Decorative background blobs */}
@@ -1381,50 +1383,57 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                                 I'll iterate through original items and verify.
                             */}
 
-                                {/* Shortcuts */}
-                                <div>
-                                    <h3 className="text-sm font-bold uppercase tracking-wider opacity-50 mb-3 flex items-center gap-2" style={{ color: 'var(--text-secondary)' }}>
-                                        <Keyboard size={14} /> {t('help.keyboardShortcuts')}
-                                    </h3>
-                                    <ul className="space-y-2 text-sm" style={{ color: 'var(--text-primary)' }}>
-                                        {HELP_TAB_PRIMARY_SHORTCUTS.map(shortcut => (
-                                            <li key={shortcut.id} className="flex items-center justify-between bg-white/5 p-2 rounded-lg">
-                                                <span>{t(shortcut.titleKey, shortcut.fallback)}</span>
-                                                <div className="flex items-center gap-1">
-                                                    <kbd className="px-2 py-0.5 bg-white/10 rounded text-xs font-mono">{isMac ? 'Cmd' : 'Ctrl'}</kbd>
-                                                    <span className="text-xs opacity-50">+</span>
-                                                    <kbd className="px-2 py-0.5 bg-white/10 rounded text-xs font-mono">{shortcut.key}</kbd>
-                                                </div>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
+                                {/* Shortcuts & player controls: keyboard-only, hidden on touch devices */}
+                                {supportsFinePointer ? (
+                                    <>
+                                        <div>
+                                            <h3 className="text-sm font-bold uppercase tracking-wider opacity-50 mb-3 flex items-center gap-2" style={{ color: 'var(--text-secondary)' }}>
+                                                <Keyboard size={14} /> {t('help.keyboardShortcuts')}
+                                            </h3>
+                                            <ul className="space-y-2 text-sm" style={{ color: 'var(--text-primary)' }}>
+                                                {HELP_TAB_PRIMARY_SHORTCUTS.map(shortcut => (
+                                                    <li key={shortcut.id} className="flex items-center justify-between bg-white/5 p-2 rounded-lg">
+                                                        <span>{t(shortcut.titleKey, shortcut.fallback)}</span>
+                                                        <div className="flex items-center gap-1">
+                                                            <kbd className="px-2 py-0.5 bg-white/10 rounded text-xs font-mono">{isMac ? 'Cmd' : 'Ctrl'}</kbd>
+                                                            <span className="text-xs opacity-50">+</span>
+                                                            <kbd className="px-2 py-0.5 bg-white/10 rounded text-xs font-mono">{shortcut.key}</kbd>
+                                                        </div>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
 
-                                {/* Player Controls */}
-                                <div>
-                                    <h3 className="text-sm font-bold uppercase tracking-wider opacity-50 mb-3 flex items-center gap-2" style={{ color: 'var(--text-secondary)' }}>
-                                        <Keyboard size={14} /> {t('help.playerControls')}
-                                    </h3>
-                                    <ul className="space-y-2 text-sm" style={{ color: 'var(--text-primary)' }}>
-                                        <li className="flex items-center justify-between bg-white/5 p-2 rounded-lg">
-                                            <span>{t('help.playPause')}</span>
-                                            <kbd className="px-2 py-0.5 bg-white/10 rounded text-xs font-mono">Space</kbd>
-                                        </li>
-                                        <li className="flex items-center justify-between bg-white/5 p-2 rounded-lg">
-                                            <span>{t('help.previousTrack')} / {t('help.nextTrack')}</span>
-                                            <div className="flex items-center gap-1">
-                                                <kbd className="px-2 py-0.5 bg-white/10 rounded text-xs font-mono">{isMac ? 'Cmd' : 'Ctrl'}</kbd>
-                                                <span className="text-xs opacity-50">+</span>
-                                                <kbd className="px-2 py-0.5 bg-white/10 rounded text-xs font-mono">← / →</kbd>
-                                            </div>
-                                        </li>
-                                        <li className="flex items-center justify-between bg-white/5 p-2 rounded-lg">
-                                            <span>{t('help.seekBackward')} / {t('help.seekForward')}</span>
-                                            <kbd className="px-2 py-0.5 bg-white/10 rounded text-xs font-mono">← / →</kbd>
-                                        </li>
+                                        <div>
+                                            <h3 className="text-sm font-bold uppercase tracking-wider opacity-50 mb-3 flex items-center gap-2" style={{ color: 'var(--text-secondary)' }}>
+                                                <Keyboard size={14} /> {t('help.playerControls')}
+                                            </h3>
+                                            <ul className="space-y-2 text-sm" style={{ color: 'var(--text-primary)' }}>
+                                                <li className="flex items-center justify-between bg-white/5 p-2 rounded-lg">
+                                                    <span>{t('help.playPause')}</span>
+                                                    <kbd className="px-2 py-0.5 bg-white/10 rounded text-xs font-mono">Space</kbd>
+                                                </li>
+                                                <li className="flex items-center justify-between bg-white/5 p-2 rounded-lg">
+                                                    <span>{t('help.previousTrack')} / {t('help.nextTrack')}</span>
+                                                    <div className="flex items-center gap-1">
+                                                        <kbd className="px-2 py-0.5 bg-white/10 rounded text-xs font-mono">{isMac ? 'Cmd' : 'Ctrl'}</kbd>
+                                                        <span className="text-xs opacity-50">+</span>
+                                                        <kbd className="px-2 py-0.5 bg-white/10 rounded text-xs font-mono">← / →</kbd>
+                                                    </div>
+                                                </li>
+                                                <li className="flex items-center justify-between bg-white/5 p-2 rounded-lg">
+                                                    <span>{t('help.seekBackward')} / {t('help.seekForward')}</span>
+                                                    <kbd className="px-2 py-0.5 bg-white/10 rounded text-xs font-mono">← / →</kbd>
+                                                </li>
 
-                                    </ul>
-                                </div>
+                                            </ul>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <p className="text-sm opacity-60" style={{ color: 'var(--text-secondary)' }}>
+                                        {t('help.touchDeviceHint')}
+                                    </p>
+                                )}
 
                                 {/* User Guide Button */}
                                 <div className="mt-6 flex flex-wrap justify-center gap-3">

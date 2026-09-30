@@ -23,6 +23,14 @@ export interface ThemeRegistryRecord {
   [key: string]: unknown;
 }
 
+// Full audio bytes for songs imported without a FileSystemFileHandle (e.g. Android WebView,
+// where the File System Access API is unavailable and playback must rely on stored blobs).
+export interface StoredLocalAudioBlob {
+  songId: string;
+  blob: Blob;
+  savedAt: number;
+}
+
 export class AppDatabase extends Dexie {
   session!: Table<unknown, string>;
   api_cache!: Table<StoredCacheEntry, string>;
@@ -34,6 +42,7 @@ export class AppDatabase extends Dexie {
   local_library_entities!: Table<LocalLibraryEntity, string>;
   local_library_assignments!: Table<LocalLibraryAssignment, string>;
   local_cover_assets!: Table<LocalCoverAsset, string>;
+  local_audio_blobs!: Table<StoredLocalAudioBlob, string>;
 
   constructor(name = APP_DATABASE_NAME) {
     super(name);
@@ -95,6 +104,20 @@ export class AppDatabase extends Dexie {
       local_library_entities: 'id, kind, *normalizedAliases, mergedInto, needsReview, createdAt',
       local_library_assignments: 'songId, *artistEntityIds, albumEntityId, artistOrigin, albumOrigin',
       local_cover_assets: 'id',
+    });
+
+    this.version(0.95).stores({
+      session: '',
+      api_cache: 'key',
+      user_cache: 'key',
+      media_cache: 'key',
+      metadata_cache: 'key',
+      local_music: 'id, localCoverAssetId',
+      theme_registry: 'fingerprint',
+      local_library_entities: 'id, kind, *normalizedAliases, mergedInto, needsReview, createdAt',
+      local_library_assignments: 'songId, *artistEntityIds, albumEntityId, artistOrigin, albumOrigin',
+      local_cover_assets: 'id',
+      local_audio_blobs: 'songId',
     });
 
     this.on('versionchange', event => {

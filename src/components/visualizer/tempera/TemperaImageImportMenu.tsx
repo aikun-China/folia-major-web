@@ -73,6 +73,7 @@ const TemperaImageImportMenu: React.FC<TemperaImageImportMenuProps> = ({
             {isOpen && (
                 <div
                     role="menu"
+                    data-folia-keyboard-window="true"
                     className="absolute bottom-full left-0 z-30 mb-2 w-52 rounded-2xl border p-1.5 shadow-2xl backdrop-blur-xl"
                     style={{
                         color: tokens.textPrimary,

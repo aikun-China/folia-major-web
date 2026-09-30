@@ -86,7 +86,7 @@ export const LocalLibraryEntityPanel = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby="local-library-entity-title"
-        className={`${panelTheme} flex max-h-[80vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-md`}
+        className={`${panelTheme} flex max-h-[80dvh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-md`}
       >
         <header className={`flex shrink-0 items-center justify-between gap-5 border-b px-8 py-6 ${borderTheme}`}>
           <div className="min-w-0">

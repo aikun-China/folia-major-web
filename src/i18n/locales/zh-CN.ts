@@ -1106,6 +1106,7 @@ export default {
     "selectPlaylist": "选择歌单",
     "clickTapCenter": "点击 / 轻触中间",
     "keyboardShortcuts": "键盘快捷键",
+    "touchDeviceHint": "键盘快捷键仅在桌面端可用，移动端请直接点按操作。",
     "quickActions": "快捷操作",
     "queueCollage": "队列拼贴",
     "playQueue": "播放队列",

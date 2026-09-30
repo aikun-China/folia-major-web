@@ -133,6 +133,18 @@ const LyricFilterSettingsModal: React.FC<LyricFilterSettingsModalProps> = ({
     const overlayBackground = isDaylight ? 'rgba(244, 244, 245, 0.9)' : 'rgba(10, 10, 12, 0.82)';
     const mutedText = isDaylight ? 'text-zinc-500' : 'text-white/50';
 
+    useEffect(() => {
+        if (!isOpen) return;
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key !== 'Escape' || event.repeat) return;
+            event.preventDefault();
+            event.stopPropagation();
+            onClose();
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isOpen, onClose]);
+
     const handleSave = async () => {
         if (error || staffPatternError) {
             return;
@@ -162,6 +174,7 @@ const LyricFilterSettingsModal: React.FC<LyricFilterSettingsModalProps> = ({
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={shellTransition}
+                    data-folia-keyboard-window="true"
                     className="fixed inset-0 z-[140] backdrop-blur-xl p-3 sm:p-5"
                     style={{ backgroundColor: overlayBackground }}
                     onClick={onClose}

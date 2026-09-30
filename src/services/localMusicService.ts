@@ -1,5 +1,5 @@
 import { LocalSong, LyricData, LocalLibrarySnapshot, LocalLibrarySnapshotFile, LocalLibrarySnapshotNode, type SongResult } from '../types';
-import { saveLocalSong, saveLocalSongs, deleteLocalSong as dbDeleteLocalSong, deleteLocalSongs as dbDeleteLocalSongs, saveDirHandles, getDirHandles, deleteDirHandle, getLocalSongs, getLocalLibrarySnapshot, saveLocalLibrarySnapshot, deleteLocalLibrarySnapshot } from './db';
+import { saveLocalSong, saveLocalSongs, deleteLocalSong as dbDeleteLocalSong, deleteLocalSongs as dbDeleteLocalSongs, saveDirHandles, getDirHandles, deleteDirHandle, getLocalSongs, getLocalLibrarySnapshot, saveLocalLibrarySnapshot, deleteLocalLibrarySnapshot, saveLocalAudioBlobs, getLocalAudioBlob, deleteLocalAudioBlobs } from './db';
 import { getLocalPlaylists, saveLocalPlaylists } from './localPlaylistService';
 import { parseEmbeddedMetadataAsync, type EmbeddedMetadataResult } from '../utils/localMetadataWorkerClient';
 import { autoMatchBestLyric } from '../utils/lyrics/autoMatchBestLyric';
@@ -44,7 +44,9 @@ interface ImportPreparationMetrics {
 }
 
 interface FileEntryForImport {
-    handle: FileSystemFileHandle;
+    // Optional: absent for the file-input fallback import (no File System Access API), where
+    // playback relies on audio bytes persisted in IndexedDB instead of a directory handle.
+    handle?: FileSystemFileHandle;
     file: File;
     folderName: string;
     relativePath: string;
@@ -940,8 +942,10 @@ async function buildImportedSong(
         useOnlineCover: existingSong?.useOnlineCover,
     };
 
-    fileHandleMap.set(songId, fileHandle);
-    localSong.fileHandle = fileHandle;
+    if (fileHandle) {
+        fileHandleMap.set(songId, fileHandle);
+        localSong.fileHandle = fileHandle;
+    }
 
     return {
         song: localSong,
@@ -1289,6 +1293,222 @@ async function importFolderContents(dirHandle: FileSystemDirectoryHandle, expect
     }
 }
 
+const FALLBACK_IMPORT_ROOT_NAME = 'Local Import';
+
+// Fallback import for environments without the File System Access API (e.g. Android WebView):
+// audio bytes are persisted in IndexedDB so playback works without a directory handle. Songs
+// imported this way cannot be rescanned from disk; re-picking the same files rebuilds the root.
+export async function importLocalFiles(files: File[]): Promise<LocalSong[]> {
+    if (files.length === 0) return [];
+    return runLocalFolderMutation(() => importLocalFilesContents(files));
+}
+
+// Opens a plain file input (directory upload where supported, multi-select otherwise) and imports
+// whatever the user picked. Resolves once the import finishes, or with [] when cancelled.
+export function importLocalFilesViaInput(): Promise<LocalSong[]> {
+    return new Promise(resolve => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.multiple = true;
+        input.setAttribute('webkitdirectory', '');
+        input.style.display = 'none';
+        let settled = false;
+        const finish = (songs: LocalSong[]) => {
+            if (settled) return;
+            settled = true;
+            input.remove();
+            resolve(songs);
+        };
+
+        input.addEventListener('cancel', () => finish([]));
+        input.addEventListener('change', async () => {
+            const pickedFiles = Array.from(input.files || []);
+            if (pickedFiles.length === 0) {
+                finish([]);
+                return;
+            }
+            try {
+                finish(await importLocalFiles(pickedFiles));
+            } catch (error) {
+                console.error('[LocalMusic][Import] File-input import failed:', error);
+                finish([]);
+            }
+        });
+
+        document.body.appendChild(input);
+        input.click();
+    });
+}
+
+async function importLocalFilesContents(files: File[]): Promise<LocalSong[]> {
+    const importStartedAt = performance.now();
+    const relevantFiles = files.filter(file => getSnapshotFileKind(file.name) !== 'other');
+
+    // Directory uploads carry a webkitRelativePath ("Root/sub/track.mp3"); flat multi-file picks
+    // fall back to the file name and are grouped under a fixed root.
+    const entriesWithPaths = relevantFiles.map(file => {
+        const webkitRelativePath = (file as File & { webkitRelativePath?: string; }).webkitRelativePath || '';
+        const relativePath = webkitRelativePath.includes('/') ? webkitRelativePath : file.name;
+        return { file, relativePath };
+    });
+
+    if (entriesWithPaths.length === 0) {
+        console.log('[LocalMusic][Import] File-input import skipped: no relevant files selected.');
+        return [];
+    }
+
+    const hasStructuredPaths = entriesWithPaths.some(entry => entry.relativePath.includes('/'));
+    const rootFolderName = hasStructuredPaths
+        ? entriesWithPaths[0].relativePath.split('/')[0]
+        : FALLBACK_IMPORT_ROOT_NAME;
+
+    const allSongs = await getLocalSongs();
+    const existingRootFolders = new Set(
+        allSongs
+            .map(s => s.folderName)
+            .filter(Boolean)
+            .map(name => name!.split('/')[0])
+    );
+    // Same-name roots are rebuilt in place (the closest analogue of a folder rescan).
+    const isRescanningExistingRoot = existingRootFolders.has(rootFolderName);
+    const existingRootSongs = allSongs.filter(song =>
+        song.folderName === rootFolderName || (song.folderName && song.folderName.startsWith(`${rootFolderName}/`))
+    );
+
+    const audioEntries: FileEntryForImport[] = [];
+    const lyricCandidates = new Map<string, { file: File; priority: number; format?: ExplicitFileTimedLyricFormat; }>();
+    const translationLyricCandidates = new Map<string, { file: File; priority: number; }>();
+    const coverCandidates = new Map<string, { file: File; priority: number; }>();
+    const lyricFormatOrder = useLyricSettingsStore.getState().localLyricFormatOrder;
+
+    entriesWithPaths.forEach(({ file, relativePath: originalRelativePath }) => {
+        const relativePath = originalRelativePath.includes('/')
+            ? originalRelativePath
+            : `${rootFolderName}/${originalRelativePath}`;
+        const kind = getSnapshotFileKind(file.name);
+        const folderName = getParentRelativePath(relativePath);
+
+        if (kind === 'lyric' || kind === 'translationLyric') {
+            const baseName = getSidecarLyricBasePath(relativePath, kind);
+            const priority = getLocalLyricFilePriority(file.name, lyricFormatOrder);
+
+            if (kind === 'translationLyric') {
+                const existing = translationLyricCandidates.get(baseName);
+                if (!existing || priority < existing.priority) {
+                    translationLyricCandidates.set(baseName, { file, priority });
+                }
+            } else {
+                const existing = lyricCandidates.get(baseName);
+                if (!existing || priority < existing.priority) {
+                    lyricCandidates.set(baseName, { file, priority, format: resolveExplicitFileTimedLyricFormat(file.name) });
+                }
+            }
+            return;
+        }
+
+        if (kind === 'cover') {
+            const priority = getFolderCoverPriority(file.name.toLowerCase());
+            const existing = coverCandidates.get(folderName);
+            if (!existing || priority < existing.priority) {
+                coverCandidates.set(folderName, { file, priority });
+            }
+            return;
+        }
+
+        if (kind === 'audio') {
+            audioEntries.push({ file, folderName, relativePath });
+        }
+    });
+
+    console.log(`[LocalMusic][Import] File-input import of "${rootFolderName}" (rescan=${isRescanningExistingRoot}): ${audioEntries.length} audio files, ${lyricCandidates.size} lyric files, ${translationLyricCandidates.size} translated lyric files, ${coverCandidates.size} cover files.`);
+    notifyLocalMusicScanProgress({
+        active: true,
+        folderName: rootFolderName,
+        totalSongs: audioEntries.length,
+        completedSongs: 0,
+    });
+
+    try {
+        const existingSongsByPath = new Map(existingRootSongs.map(song => [song.filePath, song]));
+        const tlrcMap = new Map(Array.from(translationLyricCandidates.entries()).map(([baseName, value]) => [baseName, value.file]));
+        const coverMap = new Map(Array.from(coverCandidates.entries()).map(([folderKey, value]) => [folderKey, value.file]));
+        const coverBlobCache = new Map<string, Promise<PreparedLocalCoverBlob | undefined>>();
+        const metadataStartedAt = performance.now();
+        const processedSongs = await mapWithConcurrency(audioEntries, IMPORT_CONCURRENCY, async (entry) => {
+            try {
+                return await buildImportedSong(
+                    entry,
+                    lyricCandidates,
+                    tlrcMap,
+                    coverMap,
+                    coverBlobCache,
+                    true,
+                    existingSongsByPath.get(entry.relativePath)
+                );
+            } catch (error) {
+                console.error(`Failed to import file ${entry.relativePath}:`, error);
+                return {
+                    song: null,
+                    metrics: {
+                        getFileMs: 0,
+                        lyricReadMs: 0,
+                        coverReadMs: 0,
+                        parseMetadataMs: 0,
+                        durationFallbackMs: 0,
+                        usedDurationFallback: false
+                    }
+                };
+            }
+        });
+        console.log(`[LocalMusic][Import] Prepared ${processedSongs.filter(result => result.song).length} audio files with concurrency=${IMPORT_CONCURRENCY} in ${formatImportDuration(performance.now() - metadataStartedAt)}.`);
+
+        // mapWithConcurrency preserves input order, so entries zip with their results by index.
+        const blobEntries = processedSongs
+            .map((result, index) => ({ result, entry: audioEntries[index] }))
+            .filter((item): item is { result: { song: LocalSong; metrics: ImportPreparationMetrics; }; entry: FileEntryForImport; } => item.result.song !== null)
+            .map(item => ({ songId: item.result.song.id, blob: item.entry.file }));
+
+        const removedSongs = existingRootSongs.filter(song => !audioEntries.some(entry => entry.relativePath === song.filePath));
+
+        if (blobEntries.length > 0) {
+            await saveLocalAudioBlobs(blobEntries);
+            console.log(`[LocalMusic][Import] Stored ${blobEntries.length} audio blobs for "${rootFolderName}".`);
+        }
+
+        if (removedSongs.length > 0) {
+            await deleteLocalAudioBlobs(removedSongs.map(song => song.id));
+            for (const song of removedSongs) {
+                fileHandleMap.delete(song.id);
+                await dbDeleteLocalSong(song.id);
+            }
+        }
+
+        let importedSongs: LocalSong[] = [];
+        try {
+            const songsToPersist = processedSongs
+                .map(result => result.song)
+                .filter((song): song is LocalSong => song !== null);
+            await saveLocalSongs(songsToPersist);
+            importedSongs = songsToPersist;
+        } catch (saveError) {
+            console.error('Failed to save file-input imported songs:', saveError);
+            processedSongs.forEach(result => { if (result.song) fileHandleMap.delete(result.song.id); });
+            throw saveError;
+        }
+
+        console.log(`[LocalMusic][Import] Finished file-input import of "${rootFolderName}" in ${formatImportDuration(performance.now() - importStartedAt)}.`);
+        notifyLocalMusicUpdated();
+        return importedSongs;
+    } finally {
+        notifyLocalMusicScanProgress({
+            active: false,
+            folderName: rootFolderName,
+            totalSongs: audioEntries.length,
+            completedSongs: audioEntries.length,
+        });
+    }
+}
+
 // Helper function to normalize title for comparison
 function normalizeTitle(title: string): string {
     return normalizeLyricMatchText(title).replace(/\s+/g, '');
@@ -1617,7 +1837,14 @@ export async function getAudioFromLocalSong(song: LocalSong): Promise<string | n
         }
     }
 
-    // No accessible handle available - permission may need to be restored or the file moved.
+    // Fallback imports (no File System Access API) keep their audio bytes in IndexedDB.
+    const storedBlob = await getLocalAudioBlob(song.id);
+    if (storedBlob) {
+        const url = createSafeObjectUrl(storedBlob);
+        if (url) return url;
+    }
+
+    // No accessible handle or stored audio available - permission may need to be restored or the file moved.
     console.warn(`[LocalMusic] No accessible handle for song ${song.id}. Permission restore or re-import is required.`);
     return null;
 }
@@ -1635,14 +1862,20 @@ export async function getFileFromLocalSong(song: LocalSong): Promise<File | null
     }
 
     const recoveredHandle = await recoverFileHandleFromPersistedDirectory(song);
-    if (!recoveredHandle) return null;
-    try {
-        return await recoveredHandle.getFile();
-    } catch (error) {
-        console.warn(`[LocalMusic] Failed to read recovered local input for ${song.id}:`, error);
-        fileHandleMap.delete(song.id);
-        return null;
+    if (recoveredHandle) {
+        try {
+            return await recoveredHandle.getFile();
+        } catch (error) {
+            console.warn(`[LocalMusic] Failed to read recovered local input for ${song.id}:`, error);
+            fileHandleMap.delete(song.id);
+        }
     }
+
+    const storedBlob = await getLocalAudioBlob(song.id);
+    if (storedBlob) {
+        return new File([storedBlob], song.fileName, { type: storedBlob.type || song.mimeType || undefined });
+    }
+    return null;
 }
 
 /**
@@ -1655,17 +1888,22 @@ export async function getFileFromLocalSong(song: LocalSong): Promise<File | null
  */
 export async function getLocalSongArrayBuffer(song: LocalSong): Promise<ArrayBuffer | null> {
     const fileHandle = await getAccessibleFileHandle(song);
-    if (!fileHandle) {
-        console.warn(`[LocalMusic] No accessible handle for song ${song.id} (automix bytes)`);
-        return null;
+    if (fileHandle) {
+        try {
+            return await (await fileHandle.getFile()).arrayBuffer();
+        } catch (error) {
+            console.error('[LocalMusic] Failed to read local bytes:', error);
+            fileHandleMap.delete(song.id);
+        }
     }
-    try {
-        return await (await fileHandle.getFile()).arrayBuffer();
-    } catch (error) {
-        console.error('[LocalMusic] Failed to read local bytes:', error);
-        fileHandleMap.delete(song.id);
-        return null;
+
+    const storedBlob = await getLocalAudioBlob(song.id);
+    if (storedBlob) {
+        return await storedBlob.arrayBuffer();
     }
+
+    console.warn(`[LocalMusic] No accessible handle for song ${song.id} (automix bytes)`);
+    return null;
 }
 
 // Extracts and persists one song's embedded cover after an explicit playback-time request.
@@ -1751,6 +1989,7 @@ export async function deleteSongsByIds(songIds: string[]): Promise<void> {
     });
     await Promise.all([
         dbDeleteLocalSongs(uniqueSongIds),
+        deleteLocalAudioBlobs(uniqueSongIds),
         ...uniqueSongIds.map(id => removeCachedCover(`cover_local_${id}`)),
     ]);
     await removeDeletedSongIdsFromPlaylists(uniqueSongIds);

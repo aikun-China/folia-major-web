@@ -1107,6 +1107,7 @@ export default {
     "selectPlaylist": "Select Playlist",
     "clickTapCenter": "Click / Tap Center",
     "keyboardShortcuts": "Keyboard Shortcuts",
+    "touchDeviceHint": "Keyboard shortcuts are available on desktop only. On touch devices, tap controls directly.",
     "quickActions": "Quick actions",
     "queueCollage": "Queue collage",
     "playQueue": "Play queue",

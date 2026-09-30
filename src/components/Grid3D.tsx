@@ -14,7 +14,7 @@ import {
     createOnlineGridViewCollection,
     getProviderCollectionArtistLabel,
 } from './app/home/gridViewCollectionAdapters';
-import { importFolder, resyncAllFolders, LOCAL_MUSIC_SCAN_PROGRESS_EVENT } from '../services/localMusicService';
+import { importFolder, importLocalFilesViaInput, resyncAllFolders, LOCAL_MUSIC_SCAN_PROGRESS_EVENT } from '../services/localMusicService';
 import { getLocalLibraryAvailability } from '../services/localLibraryAvailability';
 import { importLocalPlaylistFile } from '../services/localPlaylistFileService';
 import { useOnlineProviderQrLogin } from '../hooks/useOnlineProviderQrLogin';
@@ -552,6 +552,16 @@ export const Grid3D: React.FC<Grid3DProps> = (props) => {
 
         setIsLocalImporting(true);
         try {
+            if (availability.inputFallback) {
+                // No File System Access API (e.g. Android WebView): import through a file input
+                // and persist audio blobs instead of directory handles.
+                const importedSongs = await importLocalFilesViaInput();
+                if (importedSongs.length > 0) {
+                    onRefreshLocalSongs();
+                }
+                return;
+            }
+
             const importedSongs = await importFolder();
             if (importedSongs.length > 0) {
                 onRefreshLocalSongs();

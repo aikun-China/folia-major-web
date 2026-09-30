@@ -228,7 +228,7 @@ const LyricsTimelineModal: React.FC<LyricsTimelineModalProps> = ({
                         initial={{ scale: 0.9, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0.9, opacity: 0 }}
-                        className={`w-[90vw] max-w-4xl h-[80vh] ${glassBg} border ${borderColor} rounded-2xl p-8 relative flex flex-col`}
+                        className={`w-[90vw] max-w-4xl h-[80dvh] ${glassBg} border ${borderColor} rounded-2xl p-8 relative flex flex-col`}
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Header */}

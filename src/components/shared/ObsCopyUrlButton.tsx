@@ -127,6 +127,7 @@ export const ObsCopyUrlButton: React.FC<ObsCopyUrlButtonProps> = ({ onCopy, copi
             {open && triggerRect && createPortal(
                 <div
                     ref={menuRef}
+                    data-folia-keyboard-window="true"
                     className="rounded-xl border p-1 shadow-xl"
                     style={{
                         position: 'fixed',

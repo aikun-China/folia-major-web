@@ -275,3 +275,31 @@ export const getLocalLibrarySnapshot = async (rootFolderName: string): Promise<L
 export const deleteLocalLibrarySnapshot = async (rootFolderName: string): Promise<void> => {
   await removeFromCache(getLocalSnapshotCacheKey(rootFolderName));
 };
+
+export const saveLocalAudioBlobs = async (entries: Array<{ songId: string; blob: Blob; }>): Promise<void> => {
+  if (entries.length === 0) return;
+  await appDatabase.local_audio_blobs.bulkPut(entries.map(entry => ({
+    songId: entry.songId,
+    blob: entry.blob,
+    savedAt: Date.now(),
+  })));
+};
+
+export const getLocalAudioBlob = async (songId: string): Promise<Blob | null> => {
+  try {
+    const record = await appDatabase.local_audio_blobs.get(songId);
+    return record?.blob ?? null;
+  } catch (error) {
+    console.error('Failed to read local audio blob', error);
+    return null;
+  }
+};
+
+export const deleteLocalAudioBlobs = async (songIds: string[]): Promise<void> => {
+  if (songIds.length === 0) return;
+  try {
+    await appDatabase.local_audio_blobs.bulkDelete(songIds);
+  } catch (error) {
+    console.error('Failed to delete local audio blobs', error);
+  }
+};

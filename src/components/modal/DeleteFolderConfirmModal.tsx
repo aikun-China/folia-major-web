@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangle, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -31,6 +31,18 @@ const DeleteFolderConfirmModal: React.FC<DeleteFolderConfirmModalProps> = ({
     const cancelBtnBg = isDaylight ? 'bg-zinc-100/80 hover:bg-zinc-200 border-zinc-200' : 'bg-white/5 hover:bg-white/10 border-white/10';
     const cancelBtnText = isDaylight ? 'text-zinc-700' : 'text-white';
 
+    useEffect(() => {
+        if (!isOpen) return;
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key !== 'Escape' || event.repeat) return;
+            event.preventDefault();
+            event.stopPropagation();
+            onCancel();
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isOpen, onCancel]);
+
     return (
         <AnimatePresence>
             {isOpen && (
@@ -38,6 +50,7 @@ const DeleteFolderConfirmModal: React.FC<DeleteFolderConfirmModalProps> = ({
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
+                    data-folia-keyboard-window="true"
                     className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-xl p-4"
                     onClick={onCancel}
                 >

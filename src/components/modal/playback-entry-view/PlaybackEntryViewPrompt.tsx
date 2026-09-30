@@ -45,7 +45,7 @@ export const PlaybackEntryViewPrompt: React.FC<{ theme?: Theme | null }> = ({ th
                         exit={{ scale: 0.95, opacity: 0, y: 10 }}
                         transition={{ type: 'spring', bounce: 0, duration: 0.5 }}
                         onClick={(event) => event.stopPropagation()}
-                        className={`${bgClass} border rounded-[2rem] max-w-lg w-full max-h-[85vh] p-8 shadow-2xl relative overflow-y-auto hide-scrollbar`}
+                        className={`${bgClass} border rounded-[2rem] max-w-lg w-full max-h-[85dvh] p-8 shadow-2xl relative overflow-y-auto hide-scrollbar`}
                     >
                         <div className={`text-lg font-semibold ${textPrimary}`}>
                             {t('playbackEntryView.title')}

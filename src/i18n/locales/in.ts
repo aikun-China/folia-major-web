@@ -1102,6 +1102,7 @@ export default {
     "selectPlaylist": "Pilih Playlist",
     "clickTapCenter": "Klik / Ketuk Tengah",
     "keyboardShortcuts": "Pintasan Keyboard",
+    "touchDeviceHint": "Pintasan keyboard hanya tersedia di desktop. Pada perangkat sentuh, gunakan kontrol sentuh langsung.",
     "quickActions": "Aksi cepat",
     "queueCollage": "Kolase antrean",
     "playQueue": "Antrean pemutaran",

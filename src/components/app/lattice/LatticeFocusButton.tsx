@@ -80,6 +80,7 @@ export default function LatticeFocusButton({ isDaylight }: { isDaylight: boolean
                     <motion.div
                         id={panelId}
                         role="menu"
+                        data-folia-keyboard-window="true"
                         aria-label={t('home.latticeTools')}
                         initial={{ opacity: 0, scale: 0.9, originX: 1, originY: 1 }}
                         animate={{ opacity: 1, scale: 1 }}
