@@ -15,7 +15,9 @@ import {
     getProviderCollectionArtistLabel,
 } from './app/home/gridViewCollectionAdapters';
 import { importFolder, importLocalFilesViaInput, resyncAllFolders, LOCAL_MUSIC_SCAN_PROGRESS_EVENT } from '../services/localMusicService';
+import { pickAndroidFolderAndImport } from '../services/androidAudioImportService';
 import { getLocalLibraryAvailability } from '../services/localLibraryAvailability';
+import { isFoliaAndroidApp } from '../utils/platform';
 import { importLocalPlaylistFile } from '../services/localPlaylistFileService';
 import { useOnlineProviderQrLogin } from '../hooks/useOnlineProviderQrLogin';
 import type { OnlineProviderPlatformState } from '../hooks/useOnlineProviderPlatform';
@@ -547,6 +549,23 @@ export const Grid3D: React.FC<Grid3DProps> = (props) => {
             alert(t(availability.reason === 'insecure-http'
                 ? 'localMusic.insecureHttpDisabled'
                 : 'localMusic.importNotSupported'));
+            return;
+        }
+
+        // Android 壳：WebView 的文件 input 选择器不稳定，优先走原生 SAF 文件夹选择桥。
+        if (isFoliaAndroidApp() && window.foliaAndroid?.pickAudioFolder) {
+            setIsLocalImporting(true);
+            try {
+                const imported = await pickAndroidFolderAndImport();
+                if (imported) {
+                    onRefreshLocalSongs();
+                }
+            } catch (error) {
+                console.error('[Grid3D] Failed to import local folder:', error);
+                alert(t('localMusic.importNotSupported'));
+            } finally {
+                setIsLocalImporting(false);
+            }
             return;
         }
 

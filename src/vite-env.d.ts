@@ -45,6 +45,14 @@ declare global {
     mimeType: string;
   }
 
+  interface FoliaAndroidFolderEntryInfo {
+    token: string;
+    name: string;
+    size: number;
+    mimeType: string;
+    relativePath: string;
+  }
+
   /**
    * Android WebView 壳（com.aikun.folia）注入的 JS 桥，即 window.foliaAndroid。
    * 所有方法都是同步阻塞调用；返回 JSON 的方法在失败时返回 null 或空串。
@@ -62,6 +70,9 @@ declare global {
     // ③ audio/* 唤起导入
     consumePendingAudioIntent: () => string | null;
     readAudioChunk: (token: string, offset: number, length: number) => string;
+    // ⑤ 本地文件夹导入（SAF ACTION_OPEN_DOCUMENT_TREE 桥）
+    pickAudioFolder: () => boolean;
+    listAudioFolderEntries: () => string | null;
     // ④ 后台常驻播放
     setPlaybackSnapshot: (snapshotJson: string) => void;
     openBatteryOptimizationSettings: () => void;

@@ -39,6 +39,11 @@ import { useStageSettingsStore } from '../../../stores/useStageSettingsStore';
 // src/components/modal/settings/AppearanceSettingsSubview.tsx
 // Visual settings subview for theme presets, lyric renderer entry, layout settings, and configurations import/export.
 
+// 桌面向设置项（透明窗口/OBS/鼠标指针）在触屏优先设备上没有意义，直接隐藏。
+const isTouchPrimaryDevice = typeof window !== 'undefined'
+    && typeof window.matchMedia === 'function'
+    && window.matchMedia('(pointer: coarse)').matches;
+
 type AppearanceSettingsSubviewProps = {
     accentOutlineColor: string;
     bgMode: ThemeMode;
@@ -645,6 +650,7 @@ const AppearanceSettingsSubview: React.FC<AppearanceSettingsSubviewProps> = ({
                         </span>
                         <ChevronRight size={18} className="shrink-0 opacity-45 transition-transform group-hover:translate-x-0.5 group-hover:opacity-80" />
                     </button>
+                    {!isTouchPrimaryDevice && (
                     <div className={`p-4 rounded-xl border space-y-4 ${settingsCardClass}`}>
                         <div className="flex items-center justify-between gap-4">
                             <div className="space-y-1">
@@ -700,6 +706,7 @@ const AppearanceSettingsSubview: React.FC<AppearanceSettingsSubviewProps> = ({
                             </button>
                         </div>
                     </div>
+                    )}
                 </div>
             </SettingsAnchor>
 
