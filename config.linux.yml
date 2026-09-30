@@ -1,0 +1,7 @@
+tunnel: folia
+credentials-file: /root/.cloudflared/<TUNNEL_ID>.json
+
+ingress:
+  - hostname: music.aikun-bili.top
+    service: http://127.0.0.1:3000
+  - service: http_status:404
