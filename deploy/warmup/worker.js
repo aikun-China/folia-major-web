@@ -3,7 +3,7 @@
  * 定时 ping Vercel NCM API 和 Cloudflare Sync Worker，防止冷启动
  */
 
-const NCM_API_URL = 'https://netease-api-three-gray.vercel.app';
+const NCM_API_URL = 'https://musicapi.aikun-bili.top';
 const SYNC_WORKER_URL = 'https://folia-sync.761695424.workers.dev';
 
 async function warmup() {

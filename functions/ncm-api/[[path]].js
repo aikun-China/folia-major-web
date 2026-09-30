@@ -1,5 +1,5 @@
 // Pages Function: proxy /ncm-api/* to Vercel Netease Cloud Music API
-const NCM_API_URL = 'https://netease-api-three-gray.vercel.app';
+const NCM_API_URL = 'https://musicapi.aikun-bili.top';
 const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 800;
 
