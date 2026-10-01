@@ -119,6 +119,72 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // KuGou API 代理
+  if (url.startsWith('/kugou-api')) {
+    const targetPath = url.replace(/^\/kugou-api/, '');
+    const targetUrl = new URL(targetPath || '/', 'https://kugouapi.aikun-bili.top');
+    try {
+      let body = undefined;
+      if (req.method !== 'GET' && req.method !== 'HEAD') {
+        const chunks = [];
+        for await (const chunk of req) chunks.push(chunk);
+        body = Buffer.concat(chunks);
+        if (body.length === 0) body = undefined;
+      }
+      const skipHeaders = new Set(['host', 'content-length', 'connection', 'transfer-encoding', 'expect']);
+      const proxyHeaders = {};
+      for (const [key, value] of Object.entries(req.headers)) {
+        if (!skipHeaders.has(key.toLowerCase())) proxyHeaders[key] = value;
+      }
+      const apiRes = await fetch(targetUrl, {
+        method: req.method,
+        headers: proxyHeaders,
+        body: body ? body.toString('utf8') : undefined,
+        redirect: 'manual',
+      });
+      res.writeHead(apiRes.status, Object.fromEntries(apiRes.headers));
+      const buf = Buffer.from(await apiRes.arrayBuffer());
+      res.end(buf);
+    } catch (err) {
+      res.writeHead(502, { 'Content-Type': 'text/plain' });
+      res.end('Bad Gateway: ' + err.message);
+    }
+    return;
+  }
+
+  // QQ Music API 代理
+  if (url.startsWith('/qq-api')) {
+    const targetPath = url.replace(/^\/qq-api/, '');
+    const targetUrl = new URL(targetPath || '/', 'https://qqmusicapi.aikun-bili.top');
+    try {
+      let body = undefined;
+      if (req.method !== 'GET' && req.method !== 'HEAD') {
+        const chunks = [];
+        for await (const chunk of req) chunks.push(chunk);
+        body = Buffer.concat(chunks);
+        if (body.length === 0) body = undefined;
+      }
+      const skipHeaders = new Set(['host', 'content-length', 'connection', 'transfer-encoding', 'expect']);
+      const proxyHeaders = {};
+      for (const [key, value] of Object.entries(req.headers)) {
+        if (!skipHeaders.has(key.toLowerCase())) proxyHeaders[key] = value;
+      }
+      const apiRes = await fetch(targetUrl, {
+        method: req.method,
+        headers: proxyHeaders,
+        body: body ? body.toString('utf8') : undefined,
+        redirect: 'manual',
+      });
+      res.writeHead(apiRes.status, Object.fromEntries(apiRes.headers));
+      const buf = Buffer.from(await apiRes.arrayBuffer());
+      res.end(buf);
+    } catch (err) {
+      res.writeHead(502, { 'Content-Type': 'text/plain' });
+      res.end('Bad Gateway: ' + err.message);
+    }
+    return;
+  }
+
   // 静态文件
   let filePath = path.join(DIST_DIR, url === '/' ? 'index.html' : url);
   // 防止路径穿越

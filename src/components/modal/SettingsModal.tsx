@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { MotionValue } from 'framer-motion';
-import { X, Keyboard, Loader2, Check, AlertCircle, ChevronLeft, Download, ExternalLink, CircleHelp } from 'lucide-react';
+import { X, Keyboard, Loader2, Check, AlertCircle, ChevronLeft, Download, ExternalLink, CircleHelp, Mail } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSupportsFinePointer } from '../../hooks/useSupportsFinePointer';
 import { getCacheUsageByCategory, clearCacheByCategory, clearAllData } from '../../services/db';
@@ -1435,9 +1435,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                                         </div>
                                     </>
                                 ) : (
-                                    <p className="text-sm opacity-60" style={{ color: 'var(--text-secondary)' }}>
-                                        {t('help.touchDeviceHint')}
-                                    </p>
+                                    <div className="space-y-3">
+                                        <p className="text-sm opacity-60" style={{ color: 'var(--text-secondary)' }}>
+                                            {t('help.touchDeviceHint')}
+                                        </p>
+                                        {/* 语音助手限制说明 */}
+                                        <div className="bg-white/5 rounded-lg p-3 text-xs opacity-50" style={{ color: 'var(--text-secondary)' }}>
+                                            <p>语音助手（如"播放音乐"、"上一曲"）取决于手机厂商是否开放语音助手接入权限，部分厂商可能无法使用。</p>
+                                        </div>
+                                    </div>
                                 )}
 
                                 {/* User Guide Button */}
@@ -1483,6 +1489,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                                             由愛君_aikun部署{' '}
                                             <a href="https://aikun-bili.top" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors underline decoration-white/30 hover:decoration-white">了解此人</a>
                                         </p>
+                                        {/* 联系邮箱 */}
+                                        <a href="mailto:aikun_aikun@163.com" className="inline-flex items-center gap-1.5 text-xs opacity-45 hover:opacity-100 transition-opacity mt-2" style={{ color: 'var(--text-secondary)' }}>
+                                            <Mail size={12} aria-hidden />
+                                            aikun_aikun@163.com
+                                        </a>
                                     </div>
                                     <div className="flex flex-col items-center gap-2 mt-6 mb-2 text-xs font-mono text-center">
                                         {/* 第一行：原本的版本信息按钮 */}

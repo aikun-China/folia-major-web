@@ -1,0 +1,7 @@
+{
+  "name": "folia-qq-music-api-vercel",
+  "private": true,
+  "dependencies": {
+    "@yakult-green-tea/qq-music-api": "3.1.2"
+  }
+}

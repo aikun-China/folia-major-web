@@ -291,7 +291,11 @@ export const requestKugou = async <T = unknown>(operation: KugouOperation, param
         if (cookie) query.set('cookie', cookie);
         query.set('timestamp', String(Date.now()));
 
-        const response = await fetch(`${base}${ENDPOINTS[targetOperation]}?${query}`, { credentials: 'include' });
+        // 同源（Vite 代理 / preview-server）保留 include 以传递部署保护 cookie；
+        // 外部 URL（Vercel API）用 omit——cookie 已在 query string 中，跨源 include
+        // 会触发 CORS 预检且需 Access-Control-Allow-Credentials: true。
+        const isSameOrigin = base.startsWith('/');
+        const response = await fetch(`${base}${ENDPOINTS[targetOperation]}?${query}`, { credentials: isSameOrigin ? 'include' : 'omit' });
         if (!response.ok) {
             throw new OnlineProviderError('network', `KuGouMusicApi request failed: ${response.status}`, 'kugou');
         }

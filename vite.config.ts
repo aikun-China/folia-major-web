@@ -307,6 +307,16 @@ export default async function viteConfig(_config: ConfigEnv): Promise<UserConfig
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/ncm-api/, ''),
         },
+        '/kugou-api': {
+          target: 'https://kugouapi.aikun-bili.top',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/kugou-api/, ''),
+        },
+        '/qq-api': {
+          target: 'https://qqmusicapi.aikun-bili.top',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/qq-api/, ''),
+        },
       },
       watch: {
         // Build output and model weights are not sources, and watching them breaks packaging: the
@@ -326,6 +336,16 @@ export default async function viteConfig(_config: ConfigEnv): Promise<UserConfig
           target: 'http://localhost:3300',
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/ncm-api/, ''),
+        },
+        '/kugou-api': {
+          target: 'https://kugouapi.aikun-bili.top',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/kugou-api/, ''),
+        },
+        '/qq-api': {
+          target: 'https://qqmusicapi.aikun-bili.top',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/qq-api/, ''),
         },
       },
     },
