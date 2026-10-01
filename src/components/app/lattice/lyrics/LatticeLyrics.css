@@ -28,3 +28,8 @@
     .lattice-lyrics { top: 160px; bottom: 164px; }
     .lattice-root .lattice-poster.is-expanded .lattice-lyric-metadata { top: 112px; right: 32px; }
 }
+/* 横屏手机：竖屏的 160/164px 上下让位会吃掉大半高度，压缩歌词画布区。 */
+@media (orientation: landscape) and (max-height: 480px) and (max-width: 1000px) {
+    .lattice-lyrics { top: 88px; bottom: 116px; }
+    .lattice-root .lattice-poster.is-expanded .lattice-lyric-metadata { top: 64px; }
+}

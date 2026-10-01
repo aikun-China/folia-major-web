@@ -291,3 +291,14 @@ html[data-click-through='active'] body .click-through-interactive * {
 :root[data-reduce-motion~='uiMicroMotion'] .ponder-skeleton-label-in {
     animation: none;
 }
+
+/* 横屏手机（APK 已锁 userLandscape）整体缩一档：Tailwind v4 的 spacing/text
+   全走 rem，根字号 16→12.8px 即整体 ×0.8。不用 zoom——它会把 h-dvh 满屏
+   容器缩到 80% 高、底部露出 html 背景色；rem 只缩尺寸，dvh/vh 满屏类不受
+   影响。px 硬编码的 Lattice 体系由 LatticeChrome.css / LatticeLyrics.css 的
+   同名横屏块单独处理；JS 读 innerWidth 的相机缩放不受影响（布局视口不变）。 */
+@media (orientation: landscape) and (max-height: 480px) and (max-width: 1000px) {
+  html {
+    font-size: 12.8px;
+  }
+}

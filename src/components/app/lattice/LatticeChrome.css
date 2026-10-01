@@ -57,3 +57,17 @@
     .lattice-chrome-time { font-size: 20px; }
     .lattice-root .lattice-poster.is-expanded .lattice-poster-copy { bottom: 220px; }
 }
+/* 横屏手机：宽度已过 640px，上面的竖屏放大块失效、按钮跌回 44px，而海报墙
+   JS 相机缩放落在 0.64 档——内容放大、控件变小，正好错位。这里给中间值，
+   把触控目标撑回手指可用的尺寸，并同步抬高歌词文案的让位线。 */
+@media (orientation: landscape) and (max-height: 480px) and (max-width: 1000px) {
+    .lattice-chrome { width: min(100%, 720px); gap: 12px; }
+    .lattice-root .lattice-chrome button { border-radius: 16px !important; }
+    .lattice-chrome button { width: 64px; height: 64px; }
+    .lattice-chrome button svg { width: 22px; height: 22px; }
+    .lattice-chrome-transport { min-height: 64px; }
+    .lattice-progress input[type=range] { height: 64px; }
+    .lattice-progress { margin-right: 20px; }
+    .lattice-chrome-time { font-size: 14px; }
+    .lattice-root .lattice-poster.is-expanded .lattice-poster-copy { bottom: 150px; }
+}
