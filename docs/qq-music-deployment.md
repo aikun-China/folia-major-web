@@ -207,6 +207,23 @@ QQ 二维码最多存活约 3 分钟。出向 WebSocket 期间 Durable Object �
 
 如果要退回仅支持微信扫码的登录方式，移除 `QQ_QR_CHANNEL` 的 `durable_objects.bindings` 后重新部署即可。已经执行过的 migration 属于部署历史，不要重写或复用它的 tag；失去 binding 后 Durable Object 不再收到请求，也不会继续维持 MQTT 连接。`QQ_SESSION_SECRET` 和其他 QQ API 路由不需要改动。
 
+### 本仓库的独立域名部署实例（deploy/cloudflare/qq-api）
+
+上述 Cloudflare 方案绑定在整站 Worker 上（`/api/qq` 前缀）。本仓库另有一个**独立域名**部署包 `deploy/cloudflare/qq-api/`：整域 `qqmusicapi.aikun-bili.top` 交给一个独立 Worker，没有 `/api/qq` 前缀（pathname 原样透传），自带 CORS 层（前端跨源直连必需）。在包目录内：
+
+```powershell
+npm install
+npx wrangler deploy --config wrangler.jsonc        # 首次部署会自动执行 DO migration v1
+npx wrangler secret put QQ_SESSION_SECRET --config wrangler.jsonc
+```
+
+`wrangler.jsonc` 已包含 binding、migration 与 `routes`（custom_domain）。若要让自定义域名接管一个已有主机名，先删除 Cloudflare 上指向旧目标的 DNS 记录（custom domain 会由 Wrangler 自动创建所需记录），再部署。
+
+两个 Workers 运行时适配点（部署包的 `wrangler.jsonc` 已处理，自行搭建整站 Worker 时需要照做）：
+
+1. npm 包产物引用了 Node 的 `process.env.NODE_ENV` 等常量，Workers 没有该全局，需要 `define` 三元组（`process.env.NODE_ENV` / `process.env.JEST_WORKER_ID` / `process.env.LOG_LEVEL`），否则启动即 `process is not defined`。
+2. QQ 登录相关代码大量使用 Node 的 `Buffer`（`qrLogin.js` 就有几十处），Workers 默认也没有——必须 `"compatibility_flags": ["nodejs_compat"]`（Vercel Edge 内置 Buffer 所以那边不需要）。缺了它的表现是 `/login/qr/key` 回 502、日志出现 `qq-auth.bootstrap-failed { name: 'ReferenceError' }`。
+
 ## 方案三：Docker Compose
 
 Folia 的完整 Docker 堆栈已经包含 `qq-api`，不需要单独安装 npm 包：
