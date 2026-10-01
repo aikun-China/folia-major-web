@@ -21,6 +21,20 @@ export default async function handler(request) {
     const path = params.get('path') ?? '';
     params.delete('path');
     const normalized = path.startsWith('/') ? path : `/${path}`;
+    // `/:path*` 在空路径段上不触发 rewrite，`/` 需 vercel.json 显式规则才进到这里；
+    // 后端路由表没有 `/`，根路径直接返回服务状态，兼作健康检查。
+    if (normalized === '/') {
+        const info = JSON.stringify({
+            name: 'folia-qq-music-api',
+            status: 'ok',
+            service: 'QQ 音乐 API（Folia / music.aikun-bili.top）',
+            endpoints: ['/login/channels', '/login/qr/key', '/login/qr/check', '/search/:key', '/getSongInfo/:id', '/getSongUrl/:id'],
+        }, null, 2);
+        return new Response(info, {
+            status: 200,
+            headers: { 'Content-Type': 'application/json; charset=utf-8', ...CORS_HEADERS },
+        });
+    }
     const search = params.toString();
     const target = new URL(`${normalized}${search ? `?${search}` : ''}`, url.origin);
     // 用原请求构造新请求，method / headers / body 全部保留：`X-QQ-Session` 靠这里带到后端。
