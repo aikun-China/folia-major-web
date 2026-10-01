@@ -548,8 +548,13 @@ export default {
       }
       // 登录态分流：sealed 会话（qqmusic_session=...）转发包认证链路（解封 + Android 形态取链），
       // 其余值（人工配置的原始 QQ cookie 片段）仍以 Cookie 头直传匿名候选链；认证失败落匿名兜底。
+      // 标准 Cookie 头必读：qqbot 点歌插件（httpx）就是把 y.qq.com 登录态放在 Cookie 头发过来的。
       const cookie =
-        request.headers.get('x-qq-cookie') || params.get('cookie') || params.get('q') || undefined;
+        request.headers.get('x-qq-cookie') ||
+        request.headers.get('cookie') ||
+        params.get('cookie') ||
+        params.get('q') ||
+        undefined;
       const quality = params.get('quality') ?? '128';
       const mediaId = params.get('mediaId') ?? undefined;
       const debug = params.get('debug') === '1' || params.get('debug') === 'true';
