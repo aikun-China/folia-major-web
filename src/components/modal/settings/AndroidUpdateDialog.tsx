@@ -127,9 +127,13 @@ const AndroidUpdateDialog: React.FC<AndroidUpdateDialogProps> = ({ isOpen, isDay
     const currentVersion = checkResult && checkResult.kind !== 'error' ? checkResult.currentVersion : '';
     const latestVersion = release?.versionName
         ?? (checkResult?.kind === 'up-to-date' ? checkResult.latestVersion : '');
-    const progressPercent = progress.total > 0
+    const hasKnownTotal = progress.total > 0;
+    const progressPercent = hasKnownTotal
         ? Math.min(100, Math.round((progress.received / progress.total) * 100))
         : 0;
+    const progressLabel = hasKnownTotal
+        ? `${progressPercent}%`
+        : `${(progress.received / (1024 * 1024)).toFixed(1)} MB`;
 
     const textPrimary = isDaylight ? 'text-zinc-900' : 'text-white';
     const textSecondary = isDaylight ? 'text-zinc-500' : 'text-zinc-400';
@@ -179,10 +183,10 @@ const AndroidUpdateDialog: React.FC<AndroidUpdateDialogProps> = ({ isOpen, isDay
                     <div className="space-y-2 pt-1">
                         <div className={`flex items-center justify-between text-xs ${textSecondary}`}>
                             <span>{t('androidUpdate.downloading')}</span>
-                            <span className="font-mono">{progressPercent}%</span>
+                            <span className="font-mono">{progressLabel}</span>
                         </div>
                         <div className={`h-2 w-full overflow-hidden rounded-full ${isDaylight ? 'bg-zinc-200' : 'bg-white/10'}`}>
-                            {progress.total > 0 ? (
+                            {hasKnownTotal ? (
                                 <div
                                     className="h-full rounded-full bg-current transition-all duration-300"
                                     style={{ width: `${progressPercent}%`, color: 'var(--accent-color, #8b8bff)' }}

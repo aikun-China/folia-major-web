@@ -21,6 +21,17 @@ const base64ToUint8Array = (base64: string): Uint8Array<ArrayBuffer> => {
 
 type AndroidBridge = NonNullable<Window['foliaAndroid']>;
 
+/** 文件夹导入的可提示失败：messageKey 对应 i18n localMusic.* 键，调用方据此 alert。 */
+export class AndroidFolderImportError extends Error {
+    readonly messageKey: string;
+
+    constructor(messageKey: string) {
+        super(messageKey);
+        this.name = 'AndroidFolderImportError';
+        this.messageKey = messageKey;
+    }
+}
+
 /** 按块读取桥会话并组装成 File；读不到任何字节时返回 null。 */
 const assembleFileFromChunks = (
     bridge: AndroidBridge,
@@ -111,7 +122,7 @@ export const tryImportPickedAudioFolder = async (): Promise<boolean> => {
         entries = [];
     }
     if (entries.length === 0) {
-        return false;
+        throw new AndroidFolderImportError('localMusic.folderImportEmpty');
     }
 
     const files: File[] = [];
@@ -127,15 +138,19 @@ export const tryImportPickedAudioFolder = async (): Promise<boolean> => {
         files.push(file);
     }
     if (files.length === 0) {
-        return false;
+        throw new AndroidFolderImportError('localMusic.folderImportFailed');
     }
     const importedSongs = await importLocalFiles(files);
-    return importedSongs.length > 0;
+    if (importedSongs.length === 0) {
+        throw new AndroidFolderImportError('localMusic.folderImportFailed');
+    }
+    return true;
 };
 
 /**
  * 拉起原生 SAF 文件夹选择器并等待用户选择完成后导入：
- * resolve true = 完成了至少一首导入；false = 不可用/用户取消/选择为空/导入失败。
+ * resolve true = 完成了至少一首导入；resolve false = 不可用/用户取消；
+ * 选择成功但没有可导入文件/读取导入失败时 reject（AndroidFolderImportError，含 i18n messageKey）。
  * 原生侧在启动失败与用户取消时都会派发 cancel 事件，Promise 不会悬挂。
  */
 export const pickAndroidFolderAndImport = async (): Promise<boolean> => {
@@ -144,13 +159,17 @@ export const pickAndroidFolderAndImport = async (): Promise<boolean> => {
         return false;
     }
 
-    return await new Promise<boolean>((resolve) => {
+    return await new Promise<boolean>((resolve, reject) => {
         let settled = false;
-        const finish = (imported: boolean) => {
+        const finish = (imported: boolean, error?: unknown) => {
             if (settled) return;
             settled = true;
             window.removeEventListener(ANDROID_FOLDER_PICKED_EVENT, onPicked);
-            resolve(imported);
+            if (error !== undefined) {
+                reject(error);
+            } else {
+                resolve(imported);
+            }
         };
         const onPicked = (event: Event) => {
             if ((event as CustomEvent<string>).detail !== 'ok') {
@@ -158,8 +177,8 @@ export const pickAndroidFolderAndImport = async (): Promise<boolean> => {
                 return;
             }
             tryImportPickedAudioFolder()
-                .then(finish)
-                .catch(() => finish(false));
+                .then(() => finish(true))
+                .catch((error) => finish(false, error));
         };
         window.addEventListener(ANDROID_FOLDER_PICKED_EVENT, onPicked);
         if (!bridge.pickAudioFolder()) {

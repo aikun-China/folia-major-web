@@ -15,7 +15,7 @@ import {
     getProviderCollectionArtistLabel,
 } from './app/home/gridViewCollectionAdapters';
 import { importFolder, importLocalFilesViaInput, resyncAllFolders, LOCAL_MUSIC_SCAN_PROGRESS_EVENT } from '../services/localMusicService';
-import { pickAndroidFolderAndImport } from '../services/androidAudioImportService';
+import { AndroidFolderImportError, pickAndroidFolderAndImport } from '../services/androidAudioImportService';
 import { getLocalLibraryAvailability } from '../services/localLibraryAvailability';
 import { isFoliaAndroidApp } from '../utils/platform';
 import { importLocalPlaylistFile } from '../services/localPlaylistFileService';
@@ -562,7 +562,9 @@ export const Grid3D: React.FC<Grid3DProps> = (props) => {
                 }
             } catch (error) {
                 console.error('[Grid3D] Failed to import local folder:', error);
-                alert(t('localMusic.importNotSupported'));
+                alert(t(error instanceof AndroidFolderImportError
+                    ? error.messageKey
+                    : 'localMusic.importNotSupported'));
             } finally {
                 setIsLocalImporting(false);
             }

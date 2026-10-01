@@ -2556,6 +2556,8 @@ export default {
     "deleteFolderCount": "Ini akan menghapus total {{count}} lagu dari perpustakaan Anda, termasuk subfolder bersarang.",
     "deleteFolderNote": "Catatan: Ini hanya akan menghapus lagu dari perpustakaan Anda. File Anda di disk tidak akan terpengaruh.",
     "importNotSupported": "Impor folder tidak didukung di browser ini atau dibatalkan",
+    "folderImportEmpty": "Tidak ada file audio, lirik, atau sampul yang dapat diimpor di folder yang dipilih (termasuk subfolder)",
+    "folderImportFailed": "Gagal membaca atau mengimpor file dari folder. Silakan coba lagi.",
     "insecureHttpDisabled": "Perpustakaan lokal dinonaktifkan di HTTP remote. Gunakan HTTPS, localhost, atau aplikasi Electron.",
     "resyncFailed": "Gagal menyinkronkan ulang folder. Silakan coba lagi.",
     "deleteFailed": "Gagal menghapus folder. Silakan coba lagi.",

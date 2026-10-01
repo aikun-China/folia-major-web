@@ -2,8 +2,10 @@ import { useEffect } from 'react';
 import type { RefObject } from 'react';
 import { PlayerState } from '../types';
 import type { SongResult } from '../types';
-import { getSongAlbumLabel, getSongArtistLabel } from '../services/onlineMusic/songMetadata';
+import { getSongAlbumLabel, getSongArtistLabel, getSongCoverUrl } from '../services/onlineMusic/songMetadata';
+import { usePlaybackStore } from '../stores/usePlaybackStore';
 import { isFoliaAndroidApp } from '../utils/platform';
+import { findLatestActiveLineIndex } from '../utils/appPlaybackHelpers';
 
 // src/hooks/useAndroidPlaybackBridge.ts
 // APK 壳侧的 useMediaSessionBridge 对应物：把播放快照推给原生前台服务
@@ -99,6 +101,12 @@ export const useAndroidPlaybackBridge = ({
         const buildSnapshot = (): FoliaAndroidPlaybackSnapshot => {
             const audio = getDisplayAudioElement?.() ?? audioRef.current;
             const hasTrack = !!currentSong && !isNowPlayingStageActive;
+            const timeSec = audio && Number.isFinite(audio.currentTime) ? Math.max(0, audio.currentTime) : 0;
+            // 歌词/封面从播放 store 现读（不入 effect 依赖），1Hz 快照推送不引发 React 重渲染；
+            // 歌词行复用舞台歌词同一取词函数，保证通知卡片与页面歌词一致。
+            const store = usePlaybackStore.getState();
+            const lyricLines = store.lyrics?.lines ?? [];
+            const lyricIndex = lyricLines.length > 0 ? findLatestActiveLineIndex(lyricLines, timeSec) : -1;
             return {
                 hasTrack,
                 playing: hasTrack && playerState === PlayerState.PLAYING,
@@ -106,7 +114,9 @@ export const useAndroidPlaybackBridge = ({
                 artist: currentSong ? (getSongArtistLabel(currentSong) || unknownArtistLabel) : '',
                 album: currentSong ? getSongAlbumLabel(currentSong) : '',
                 durationSec: audio && Number.isFinite(audio.duration) ? Math.max(0, Math.floor(audio.duration)) : 0,
-                positionSec: audio && Number.isFinite(audio.currentTime) ? Math.max(0, audio.currentTime) : 0,
+                positionSec: timeSec,
+                artworkUrl: store.cachedCoverUrl || getSongCoverUrl(currentSong) || '',
+                currentLyricLine: lyricIndex >= 0 ? (lyricLines[lyricIndex]?.fullText ?? '') : '',
             };
         };
 

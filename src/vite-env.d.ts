@@ -36,6 +36,8 @@ declare global {
     album: string;
     durationSec: number;
     positionSec: number;
+    artworkUrl?: string;
+    currentLyricLine?: string;
   }
 
   interface FoliaAndroidImportFileInfo {

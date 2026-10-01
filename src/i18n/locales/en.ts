@@ -2625,6 +2625,8 @@ export default {
     "deleteSubfolderMessage": "Remove “{{folderName}}” and skip future scans. Restore in All view. Disk files stay unchanged.",
     "deleteRootFolderMessage": "Remove “{{folderName}}” and all its tracks from the library. Disk files stay unchanged.",
     "importNotSupported": "Folder import not supported in this browser or cancelled",
+    "folderImportEmpty": "No importable audio, lyric, or cover files found in the selected folder (subfolders included)",
+    "folderImportFailed": "Failed to read or import files from the folder. Please try again.",
     "insecureHttpDisabled": "Local library is disabled on remote HTTP. Use HTTPS, localhost, or the Electron app.",
     "resyncFailed": "Failed to resync folder. Please try again.",
     "deleteFailed": "Failed to delete folder. Please try again.",

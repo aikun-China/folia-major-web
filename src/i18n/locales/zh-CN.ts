@@ -2624,6 +2624,8 @@ export default {
     "deleteSubfolderMessage": "移除“{{folderName}}”并忽略扫描，可在全部视图恢复。磁盘文件不变。",
     "deleteRootFolderMessage": "从曲库移除“{{folderName}}”及全部歌曲。磁盘文件不变。",
     "importNotSupported": "当前浏览器不支持文件夹导入",
+    "folderImportEmpty": "所选文件夹（含子文件夹）中没有找到可导入的音频/歌词/封面文件",
+    "folderImportFailed": "文件夹中的文件读取或导入失败，请重试。",
     "insecureHttpDisabled": "远程 HTTP 环境已禁用本地曲库，请使用 HTTPS、localhost 或 Electron 客户端。",
     "resyncFailed": "重新同步文件夹失败，请重试。",
     "deleteFailed": "删除文件夹失败，请重试。",
