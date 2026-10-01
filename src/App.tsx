@@ -1481,6 +1481,7 @@ export default function App() {
         mediaSessionPrevRef,
         mediaSessionNextRef,
         isNowPlayingControlDisabledRef,
+        onSearchResultPlay: handleSearchResultPlay,
     });
 
     const {

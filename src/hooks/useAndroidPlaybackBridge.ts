@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import type { RefObject } from 'react';
 import { PlayerState } from '../types';
-import type { SongResult } from '../types';
+import type { SongResult, UnifiedSong } from '../types';
+import { omni } from '../services/onlineMusic/omni';
 import { getSongAlbumLabel, getSongArtistLabel, getSongCoverUrl } from '../services/onlineMusic/songMetadata';
 import { usePlaybackStore } from '../stores/usePlaybackStore';
 import { isFoliaAndroidApp } from '../utils/platform';
@@ -16,6 +17,13 @@ export const ANDROID_MEDIA_COMMAND_EVENT = 'folia-android-media-command';
 
 /** 进度推送节流：桥调用是同步阻塞的，timeupdate 约 4Hz，压到 1Hz 足够通知栏进度展示。 */
 const SNAPSHOT_PUSH_INTERVAL_MS = 1000;
+
+// 原生 PlaybackService 派发的命令载荷（JSON 文本经 JSON.parse 后的形态）。
+type AndroidMediaCommandPayload = {
+    command: 'play' | 'pause' | 'prev' | 'next' | 'search';
+    query?: string;
+    focus?: string;
+};
 
 const EMPTY_SNAPSHOT: FoliaAndroidPlaybackSnapshot = {
     hasTrack: false,
@@ -39,6 +47,7 @@ type UseAndroidPlaybackBridgeOptions = {
     mediaSessionPrevRef: RefObject<() => void>;
     mediaSessionNextRef: RefObject<() => Promise<void> | void>;
     isNowPlayingControlDisabledRef: RefObject<boolean>;
+    onSearchResultPlay: (song: UnifiedSong) => void;
 };
 
 export const useAndroidPlaybackBridge = ({
@@ -53,42 +62,71 @@ export const useAndroidPlaybackBridge = ({
     mediaSessionPrevRef,
     mediaSessionNextRef,
     isNowPlayingControlDisabledRef,
+    onSearchResultPlay,
 }: UseAndroidPlaybackBridgeOptions) => {
-    // 原生命令（通知栏/锁屏按钮、音频焦点丢失、耳机拔出）→ 播放器。
+    // 原生命令（通知栏/锁屏按钮、音频焦点丢失、耳机拔出、语音助手搜索）→ 播放器。
     // 守卫与 useMediaSessionBridge 的 action handler 保持一致。
     useEffect(() => {
         if (!isFoliaAndroidApp() || !window.foliaAndroid) {
             return;
         }
+        // 语音助手"播放 xxx"：全局搜索（跟随当前激活音源）取第一首直接入队播放。
+        // 语音入口无 UI，失败仅告警不打断用户。
+        const handleVoiceSearch = async (query: string) => {
+            const trimmed = query.trim();
+            if (!trimmed || isNowPlayingControlDisabledRef.current) {
+                return;
+            }
+            try {
+                const page = await omni.searchSongs(trimmed, { limit: 1, offset: 0 });
+                const song = page.items[0];
+                if (!song) {
+                    console.warn('[AndroidPlayback] Voice search: no results for', trimmed);
+                    return;
+                }
+                onSearchResultPlay(song);
+            } catch (error) {
+                console.warn('[AndroidPlayback] Voice search failed', error);
+            }
+        };
+        // 原生派发 JSON 文本（play/pause/prev/next/search），JSON.parse 解包后按 command
+        // 字段路由——语音 query 里的引号/反斜杠已在原生侧 JSON 转义，不会破坏路由。
         const handleCommand = (event: Event) => {
-            const command = (event as CustomEvent<string>).detail;
-            if (command === 'play') {
+            let payload: AndroidMediaCommandPayload;
+            try {
+                payload = JSON.parse((event as CustomEvent<string>).detail);
+            } catch {
+                return;
+            }
+            if (payload.command === 'play') {
                 if (isNowPlayingControlDisabledRef.current || !audioRef.current) {
                     return;
                 }
                 mediaSessionPlayRef.current().catch((e) => {
                     console.error('Android media play failed', e);
                 });
-            } else if (command === 'pause') {
+            } else if (payload.command === 'pause') {
                 if (isNowPlayingControlDisabledRef.current || !audioRef.current) {
                     return;
                 }
                 mediaSessionPauseRef.current();
-            } else if (command === 'prev') {
+            } else if (payload.command === 'prev') {
                 if (isNowPlayingControlDisabledRef.current) {
                     return;
                 }
                 mediaSessionPrevRef.current();
-            } else if (command === 'next') {
+            } else if (payload.command === 'next') {
                 if (isNowPlayingControlDisabledRef.current) {
                     return;
                 }
                 void mediaSessionNextRef.current();
+            } else if (payload.command === 'search') {
+                void handleVoiceSearch(payload.query ?? '');
             }
         };
         window.addEventListener(ANDROID_MEDIA_COMMAND_EVENT, handleCommand);
         return () => window.removeEventListener(ANDROID_MEDIA_COMMAND_EVENT, handleCommand);
-    }, [audioRef, isNowPlayingControlDisabledRef, mediaSessionNextRef, mediaSessionPauseRef, mediaSessionPlayRef, mediaSessionPrevRef]);
+    }, [audioRef, isNowPlayingControlDisabledRef, mediaSessionNextRef, mediaSessionPauseRef, mediaSessionPlayRef, mediaSessionPrevRef, onSearchResultPlay]);
 
     // 快照推送：曲目/状态变化即时推，进度经 timeupdate 按 1Hz 节流推。
     // 快照描述的是 DISPLAYED 轨道（与 useMediaSessionBridge 同一套输入），混音过渡期元数据与进度同源。
