@@ -18,11 +18,14 @@ export const ANDROID_MEDIA_COMMAND_EVENT = 'folia-android-media-command';
 /** 进度推送节流：桥调用是同步阻塞的，timeupdate 约 4Hz，压到 1Hz 足够通知栏进度展示。 */
 const SNAPSHOT_PUSH_INTERVAL_MS = 1000;
 
-// 原生 PlaybackService 派发的命令载荷（JSON 文本经 JSON.parse 后的形态）。
+// 原生 PlaybackService 派发的命令载荷。旧 APK 的注入表达式在页面侧之前已 JSON.parse 一次
+// （detail 到达时是对象）；新 APK 修正为 detail=JSON 文本。两种形态都接受，避免再出现
+// 对字符串做二次 parse 抛错、整条命令链静默丢弃的回归。
 type AndroidMediaCommandPayload = {
-    command: 'play' | 'pause' | 'prev' | 'next' | 'search';
+    command: 'play' | 'pause' | 'prev' | 'next' | 'search' | 'seek';
     query?: string;
     focus?: string;
+    positionSec?: number;
 };
 
 const EMPTY_SNAPSHOT: FoliaAndroidPlaybackSnapshot = {
@@ -46,6 +49,7 @@ type UseAndroidPlaybackBridgeOptions = {
     mediaSessionPauseRef: RefObject<() => void>;
     mediaSessionPrevRef: RefObject<() => void>;
     mediaSessionNextRef: RefObject<() => Promise<void> | void>;
+    mediaSessionSeekRef: RefObject<(time: number) => void>;
     isNowPlayingControlDisabledRef: RefObject<boolean>;
     onSearchResultPlay: (song: UnifiedSong) => void;
 };
@@ -61,6 +65,7 @@ export const useAndroidPlaybackBridge = ({
     mediaSessionPauseRef,
     mediaSessionPrevRef,
     mediaSessionNextRef,
+    mediaSessionSeekRef,
     isNowPlayingControlDisabledRef,
     onSearchResultPlay,
 }: UseAndroidPlaybackBridgeOptions) => {
@@ -89,12 +94,14 @@ export const useAndroidPlaybackBridge = ({
                 console.warn('[AndroidPlayback] Voice search failed', error);
             }
         };
-        // 原生派发 JSON 文本（play/pause/prev/next/search），JSON.parse 解包后按 command
-        // 字段路由——语音 query 里的引号/反斜杠已在原生侧 JSON 转义，不会破坏路由。
+        // 原生派发命令，按 command 字段路由。detail 兼容两种形态：JSON 文本（旧契约，
+        // 页面侧 parse）与已解析对象（旧 APK 的注入表达式已先行 parse）。seek 携带
+        // positionSec，走与页内进度条同一的 seek 通道（automix 混音取消/舞台时钟同步在内）。
         const handleCommand = (event: Event) => {
             let payload: AndroidMediaCommandPayload;
             try {
-                payload = JSON.parse((event as CustomEvent<string>).detail);
+                const detail = (event as CustomEvent<string | AndroidMediaCommandPayload>).detail;
+                payload = typeof detail === 'string' ? JSON.parse(detail) : detail;
             } catch {
                 return;
             }
@@ -120,13 +127,21 @@ export const useAndroidPlaybackBridge = ({
                     return;
                 }
                 void mediaSessionNextRef.current();
+            } else if (payload.command === 'seek') {
+                if (isNowPlayingControlDisabledRef.current) {
+                    return;
+                }
+                const positionSec = payload.positionSec;
+                if (typeof positionSec === 'number' && Number.isFinite(positionSec)) {
+                    mediaSessionSeekRef.current(Math.max(0, positionSec));
+                }
             } else if (payload.command === 'search') {
                 void handleVoiceSearch(payload.query ?? '');
             }
         };
         window.addEventListener(ANDROID_MEDIA_COMMAND_EVENT, handleCommand);
         return () => window.removeEventListener(ANDROID_MEDIA_COMMAND_EVENT, handleCommand);
-    }, [audioRef, isNowPlayingControlDisabledRef, mediaSessionNextRef, mediaSessionPauseRef, mediaSessionPlayRef, mediaSessionPrevRef, onSearchResultPlay]);
+    }, [audioRef, isNowPlayingControlDisabledRef, mediaSessionNextRef, mediaSessionPauseRef, mediaSessionPlayRef, mediaSessionPrevRef, mediaSessionSeekRef, onSearchResultPlay]);
 
     // 快照推送：曲目/状态变化即时推，进度经 timeupdate 按 1Hz 节流推。
     // 快照描述的是 DISPLAYED 轨道（与 useMediaSessionBridge 同一套输入），混音过渡期元数据与进度同源。

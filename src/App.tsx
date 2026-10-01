@@ -1441,9 +1441,17 @@ export default function App() {
         mediaSessionPauseRef,
         mediaSessionPrevRef,
         mediaSessionNextRef,
+        mediaSessionSeekRef,
         taskbarHasTrackRef,
         taskbarPlayerStateRef,
-    } = useTransportCommandRefs({ resumePlayback, pausePlayback, handlePrevTrack, handleNextTrack });
+    } = useTransportCommandRefs({
+        resumePlayback,
+        pausePlayback,
+        handlePrevTrack,
+        handleNextTrack,
+        // seekMainAudio 定义在本调用之后，闭包延迟解引用：媒体命令触发时已初始化。
+        seek: (time) => seekMainAudio(time),
+    });
 
     useMediaSessionBridge({
         audioRef,
@@ -1480,6 +1488,7 @@ export default function App() {
         mediaSessionPauseRef,
         mediaSessionPrevRef,
         mediaSessionNextRef,
+        mediaSessionSeekRef,
         isNowPlayingControlDisabledRef,
         onSearchResultPlay: handleSearchResultPlay,
     });

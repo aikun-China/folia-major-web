@@ -15,6 +15,7 @@ type TransportCommandRefsParams = {
     pausePlayback: () => void;
     handlePrevTrack: () => void;
     handleNextTrack: (options?: never) => Promise<void>;
+    seek: (time: number) => void;
 };
 
 export const useTransportCommandRefs = ({
@@ -22,6 +23,7 @@ export const useTransportCommandRefs = ({
     pausePlayback,
     handlePrevTrack,
     handleNextTrack,
+    seek,
 }: TransportCommandRefsParams) => {
     const currentSong = usePlaybackStore(state => state.currentSong);
     // The transport the picture belongs to, not the raw one: every consumer of this ref asks "is
@@ -35,6 +37,7 @@ export const useTransportCommandRefs = ({
     const mediaSessionPauseRef = useRef(pausePlayback);
     const mediaSessionPrevRef = useRef(handlePrevTrack);
     const mediaSessionNextRef = useRef(handleNextTrack);
+    const mediaSessionSeekRef = useRef(seek);
     const taskbarHasTrackRef = useRef(Boolean(currentSong));
     const taskbarPlayerStateRef = useRef(displayPlayerState);
 
@@ -55,6 +58,10 @@ export const useTransportCommandRefs = ({
     }, [handleNextTrack]);
 
     useEffect(() => {
+        mediaSessionSeekRef.current = seek;
+    }, [seek]);
+
+    useEffect(() => {
         taskbarHasTrackRef.current = Boolean(currentSong);
     }, [currentSong]);
 
@@ -68,6 +75,7 @@ export const useTransportCommandRefs = ({
         mediaSessionPauseRef,
         mediaSessionPrevRef,
         mediaSessionNextRef,
+        mediaSessionSeekRef,
         taskbarHasTrackRef,
         taskbarPlayerStateRef,
     }), []);
