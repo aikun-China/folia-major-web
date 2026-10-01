@@ -149,8 +149,19 @@ const getStoredLocalTrackSortDirection = (): LocalSongFolderSortDirection => {
 // Card box and hex spacing per container-width breakpoint. Module scope so the memo above
 // reads as "pick a breakpoint, then apply the square-card option" rather than hiding the
 // table inside it.
-const resolveGridViewCardBox = (width: number) => {
-    if (width < 768) {
+const resolveGridViewCardBox = (width: number, height: number) => {
+    if (height > 0 && height < 480) {
+        // Landscape / short viewport (e.g. phone held sideways)
+        return {
+            cardWidth: 132,
+            cardHeight: 200,
+            spacingX: 150,
+            spacingY: 192,
+            maxDistance: 300,
+            lodStart: 205,
+            lodEnd: 230,
+        };
+    } else if (width < 768) {
         // Mobile/Narrow
         return {
             cardWidth: 180,
@@ -327,10 +338,9 @@ export const GridView: React.FC<GridViewProps> = ({
 
     // Layout values for different container size breakpoints
     const layoutConfig = useMemo(() => {
-        const width = containerSize.width;
-        const box = resolveGridViewCardBox(width);
+        const box = resolveGridViewCardBox(containerSize.width, containerSize.height);
         return squareCards ? squareGridCardBox(box) : box;
-    }, [containerSize.width, squareCards]);
+    }, [containerSize.width, containerSize.height, squareCards]);
 
     // Dynamically calculate visible clipping radius centered on (0,0) viewport coordinates
     const clipRadius = useMemo(() => {

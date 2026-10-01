@@ -219,8 +219,22 @@ export const getArtistGridAlbumCoverUrl = (album: any): string | undefined => {
 // Card box, hex spacing and the sizes of the artist wall's own avatar and bio cards, per
 // container-width breakpoint. Lifted out of the component so the memo shows only the choice
 // between the plain box and the squared one.
-const resolveArtistGridCardBox = (width: number) => {
-    if (width < 768) {
+const resolveArtistGridCardBox = (width: number, height: number) => {
+    if (height > 0 && height < 480) {
+        // Landscape / short viewport (e.g. phone held sideways)
+        return {
+            cardWidth: 132,
+            cardHeight: 200,
+            spacingX: 150,
+            spacingY: 192,
+            maxDistance: 300,
+            lodStart: 205,
+            lodEnd: 230,
+            avatarSize: 170,
+            bioWidth: 290,
+            bioHeight: 155,
+        };
+    } else if (width < 768) {
         // Mobile/Narrow
         return {
             cardWidth: 180,
@@ -337,9 +351,9 @@ const ArtistGridView: React.FC<ArtistGridViewProps> = ({
 
     // Layout values for different container size breakpoints
     const layoutConfig = useMemo(() => {
-        const box = resolveArtistGridCardBox(containerSize.width);
+        const box = resolveArtistGridCardBox(containerSize.width, containerSize.height);
         return squareCards ? squareGridCardBox(box) : box;
-    }, [containerSize.width, squareCards]);
+    }, [containerSize.width, containerSize.height, squareCards]);
 
     // Dynamically calculate visible clipping radius centered on (0,0) viewport coordinates
     const clipRadius = useMemo(() => {

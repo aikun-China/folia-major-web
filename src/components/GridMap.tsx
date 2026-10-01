@@ -365,7 +365,17 @@ export const GridMap: React.FC<GridMapProps> = ({
     // Layout values for different container size breakpoints
     const layoutConfig = useMemo(() => {
         const width = containerSize.width;
-        if (width < 768) {
+        const height = containerSize.height;
+        if (height > 0 && height < 480) {
+            // Landscape / short viewport (e.g. phone held sideways)
+            return {
+                cardWidth: 132,
+                cardHeight: 175,
+                spacingX: 150,
+                spacingY: 168,
+                maxDistance: 300,
+            };
+        } else if (width < 768) {
             return {
                 cardWidth: 180,
                 cardHeight: 250,
@@ -398,7 +408,7 @@ export const GridMap: React.FC<GridMapProps> = ({
                 maxDistance: 660,
             };
         }
-    }, [containerSize.width]);
+    }, [containerSize.width, containerSize.height]);
 
     // Dynamically calculate visible clipping radius centered on (0,0) viewport coordinates
     const clipRadius = useMemo(() => {

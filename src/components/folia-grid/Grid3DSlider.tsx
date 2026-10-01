@@ -215,6 +215,7 @@ export const Grid3DSlider: React.FC<Grid3DSliderProps> = ({
 
     const isDesktopWidth = containerSize.width >= 768;
     const isNarrowLayout = containerSize.width > 0 && containerSize.width < 768;
+    const isUltraShortLayout = containerSize.height > 0 && containerSize.height < 480;
     const isShortLayout = containerSize.height > 0 && containerSize.height < (hasFloatingPlayer ? 420 : 380);
     const useCompactMetrics = isNarrowLayout || isShortLayout;
     const isLargeDesktop = !useCompactMetrics
@@ -226,9 +227,11 @@ export const Grid3DSlider: React.FC<Grid3DSliderProps> = ({
         && containerSize.width >= 2000
         && containerSize.height >= (hasFloatingPlayer ? 780 : 720);
 
-    const coverSize = useCompactMetrics
-        ? (isDesktopWidth ? 208 : 192)
-        : (isDesktopWidth ? (isUltraDesktop ? 360 : isLargeDesktop ? 312 : 218) : 224);
+    const coverSize = isUltraShortLayout
+        ? (isDesktopWidth ? 152 : 140)
+        : useCompactMetrics
+            ? (isDesktopWidth ? 208 : 192)
+            : (isDesktopWidth ? (isUltraDesktop ? 360 : isLargeDesktop ? 312 : 218) : 224);
     const edgePadding = Math.max(0, (containerSize.width - coverSize) / 2);
 
     const safeFocusedIndex = clampFocusedIndex(focusedIndex, items.length);
