@@ -228,7 +228,7 @@ export const Grid3DSlider: React.FC<Grid3DSliderProps> = ({
         && containerSize.height >= (hasFloatingPlayer ? 780 : 720);
 
     const coverSize = isUltraShortLayout
-        ? (isDesktopWidth ? 152 : 140)
+        ? (isDesktopWidth ? 116 : 104)
         : useCompactMetrics
             ? (isDesktopWidth ? 208 : 192)
             : (isDesktopWidth ? (isUltraDesktop ? 360 : isLargeDesktop ? 312 : 218) : 224);
@@ -259,7 +259,7 @@ export const Grid3DSlider: React.FC<Grid3DSliderProps> = ({
         if (!container) return undefined;
         const maxDist = 600;
         const isImage = grid3dCardStyle === 'image';
-        const peakScale = isImage ? 1.25 : 1.2;
+        const peakScale = isUltraShortLayout ? 1.1 : (isImage ? 1.25 : 1.2);
         const minScale = 0.5;
         const cards = container.querySelectorAll<HTMLElement>('[data-grid3d-index]');
         const viewportWidth = container.clientWidth;
@@ -286,7 +286,7 @@ export const Grid3DSlider: React.FC<Grid3DSliderProps> = ({
         }
 
         return closestIndex;
-    }, [cardPitch, coverSize, edgePadding, grid3dCardStyle, items.length]);
+    }, [cardPitch, coverSize, edgePadding, grid3dCardStyle, isUltraShortLayout, items.length]);
 
     const reportFocusedIndex = useCallback((index: number) => {
         const nextIndex = clampFocusedIndex(index, items.length);
@@ -722,10 +722,10 @@ export const Grid3DSlider: React.FC<Grid3DSliderProps> = ({
                                         </div>
                                     ) : (
                                         <div
-                                            className="rounded-xl border p-4 flex flex-col items-center backdrop-blur-md shadow-lg hover:shadow-2xl theme-polaroid-card"
+                                            className={`rounded-xl border ${isUltraShortLayout ? 'p-2' : 'p-4'} flex flex-col items-center backdrop-blur-md shadow-lg hover:shadow-2xl theme-polaroid-card`}
                                             style={{ width: coverSize }}
                                         >
-                                            <div className="w-full aspect-square rounded-lg overflow-hidden bg-zinc-800/20 relative shadow-inner mb-4 flex items-center justify-center">
+                                            <div className={`w-full aspect-square rounded-lg overflow-hidden bg-zinc-800/20 relative shadow-inner ${isUltraShortLayout ? 'mb-1.5' : 'mb-4'} flex items-center justify-center`}>
                                                 {item.coverUrl && loadedIndices.has(index) ? (
                                                     <img src={getSizedCoverUrl(item.coverUrl, coverSize)} alt={typeof displayName === 'string' ? displayName : ''} loading="lazy" decoding="async" className="w-full h-full object-cover pointer-events-none select-none" />
                                                 ) : (
@@ -733,7 +733,7 @@ export const Grid3DSlider: React.FC<Grid3DSliderProps> = ({
                                                 )}
                                             </div>
 
-                                            <div className="w-full text-left pt-2 min-w-0">
+                                            <div className={`w-full text-left ${isUltraShortLayout ? 'pt-1' : 'pt-2'} min-w-0`}>
                                                 <h3 className="font-bold text-sm truncate max-w-full tracking-tight">
                                                     {displayName}
                                                 </h3>
