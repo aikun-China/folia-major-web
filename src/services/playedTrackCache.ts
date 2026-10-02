@@ -13,6 +13,21 @@ export type PlayedTrackCacheResult = { audio: boolean; cover: boolean };
 
 const NOTHING_WRITTEN: PlayedTrackCacheResult = { audio: false, cover: false };
 
+// The full-song refetch is the largest single download this path can trigger, so on metered
+// networks it is skipped: the track still plays fine, only the offline-again convenience is
+// given up. `saveData` is the user's own metered flag; `type: 'cellular'` catches mobile
+// data directly. Low effective types are treated as metered too — but NOT '4g', which desktop
+// Chrome reports even on ethernet, so including it would wrongly gate desktop caching.
+const shouldSkipAudioRefetch = (): boolean => {
+    const connection = (navigator as Navigator & {
+        connection?: { saveData?: boolean; type?: string; effectiveType?: string };
+    }).connection;
+    if (!connection) return false;
+    if (connection.saveData) return true;
+    if (connection.type === 'cellular') return true;
+    return connection.effectiveType === 'slow-2g' || connection.effectiveType === '2g';
+};
+
 /**
  * Stores a fully-played track's audio and cover in the media cache.
  *
@@ -38,7 +53,9 @@ export const cachePlayedTrackAssets = async (
 
     // Audio needs a source that can actually be refetched: a blob: URL is this session's own handle
     // to bytes that are either already cached or on disk, so there is nothing to fetch and store.
-    if (src && !src.startsWith('blob:') && !await hasCachedSongAudio(song)) {
+    // Metered networks skip the refetch — this "cache what just finished playing" pass re-downloads
+    // the whole track, which is exactly the background spend the user complained about.
+    if (src && !src.startsWith('blob:') && !shouldSkipAudioRefetch() && !await hasCachedSongAudio(song)) {
         console.log('[Cache] Caching fully played song:', song.name);
         try {
             const response = await fetch(src);

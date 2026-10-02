@@ -1632,7 +1632,7 @@ export default {
     "voiceInputPause": "Jeda pemutaran saat input suara",
     "voiceInputPauseDesc": "Secara otomatis menjeda pemutaran saat input suara sistem (ketik suara Win+H, teks-ke-ucapan IME) atau aplikasi lain menggunakan mikrofon, dan lanjutkan setelahnya. Hanya desktop Windows.",
     "preventDisplaySleepDuringPlayback": "Cegah layar tidur saat pemutaran",
-    "preventDisplaySleepDuringPlaybackDesc": "Hanya desktop. Jaga layar tetap menyala selama musik diputar; perilaku tidur normal kembali saat pemutaran dijeda atau dihentikan.",
+    "preventDisplaySleepDuringPlaybackDesc": "Jaga layar tetap menyala selama musik diputar (desktop dan aplikasi Android); perilaku tidur normal kembali saat pemutaran dijeda atau dihentikan.",
     "enableModSystem": "Sistem mod",
     "enableModSystemDesc": "Hanya desktop. Mengaktifkan perintah Mod dan panel pengelola mod, serta membuat loader menemukan dan memuat mod; saat nonaktif tidak ada kode mod yang dimuat sama sekali.",
     "enableModSystemDescSub": "Mod berjalan dengan hak penuh aplikasi, dan setiap mod tetap harus dikonfirmasi satu per satu sebelum dijalankan. API belum final dan dapat berubah.",

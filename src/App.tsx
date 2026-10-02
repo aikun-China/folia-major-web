@@ -69,6 +69,9 @@ import { useOnlineProviderPlatform } from './hooks/useOnlineProviderPlatform';
 import { useAppPreferences } from './hooks/useAppPreferences';
 import { useElectronPlaybackBridge } from './hooks/useElectronPlaybackBridge';
 import { useElectronDisplaySleepBlocker } from './hooks/useElectronDisplaySleepBlocker';
+import { useWebScreenWakeLock } from './hooks/useWebScreenWakeLock';
+import { useAndroidUpdateAutoCheck } from './hooks/useAndroidUpdateAutoCheck';
+import AndroidUpdateDialog from './components/modal/settings/AndroidUpdateDialog';
 import { useSleepTimer } from './hooks/useSleepTimer';
 import { useElectronNeteaseApiStatus } from './hooks/useElectronNeteaseApiStatus';
 import { useLocalLibraryAutoScan } from './hooks/useLocalLibraryAutoScan';
@@ -449,6 +452,14 @@ export default function App() {
         preventDisplaySleepDuringPlayback,
         playerState === PlayerState.PLAYING,
     );
+
+    // Web/安卓壳侧的同义实现：WebView 84+ 支持 Screen Wake Lock，与桌面端共用同一开关。
+    useWebScreenWakeLock(
+        preventDisplaySleepDuringPlayback,
+        playerState === PlayerState.PLAYING,
+    );
+
+    const [androidAutoUpdateRelease, dismissAndroidAutoUpdate] = useAndroidUpdateAutoCheck();
 
     const visualizerTunings = useVisualizerTunings();
 
@@ -1482,7 +1493,6 @@ export default function App() {
         getDisplayAudioElement: automix.getDisplayElement,
         currentSong: displaySong,
         playerState: displayPlayerState,
-        isNowPlayingStageActive,
         unknownArtistLabel: t('ui.unknownArtist'),
         mediaSessionPlayRef,
         mediaSessionPauseRef,
@@ -2815,6 +2825,13 @@ export default function App() {
                 onAddCurrentSongToOnlinePlaylist={addCurrentSongToOnlinePlaylist}
                 onAddCurrentSongToNavidromePlaylist={addCurrentSongToNavidromePlaylist}
                 onCreateCurrentNavidromePlaylist={createCurrentNavidromePlaylist}
+            />
+
+            {/* APK 壳启动自动检查更新：延迟 12s 静默检查，发现新版本才弹内置更新弹窗。 */}
+            <AndroidUpdateDialog
+                isOpen={androidAutoUpdateRelease !== null}
+                isDaylight={isDaylight}
+                onClose={dismissAndroidAutoUpdate}
             />
 
             <CommandPalette

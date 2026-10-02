@@ -43,7 +43,6 @@ type UseAndroidPlaybackBridgeOptions = {
     getDisplayAudioElement?: () => HTMLAudioElement | null;
     currentSong: SongResult | null;
     playerState: PlayerState;
-    isNowPlayingStageActive: boolean;
     unknownArtistLabel: string;
     mediaSessionPlayRef: RefObject<() => Promise<void>>;
     mediaSessionPauseRef: RefObject<() => void>;
@@ -59,7 +58,6 @@ export const useAndroidPlaybackBridge = ({
     getDisplayAudioElement,
     currentSong,
     playerState,
-    isNowPlayingStageActive,
     unknownArtistLabel,
     mediaSessionPlayRef,
     mediaSessionPauseRef,
@@ -153,7 +151,10 @@ export const useAndroidPlaybackBridge = ({
 
         const buildSnapshot = (): FoliaAndroidPlaybackSnapshot => {
             const audio = getDisplayAudioElement?.() ?? audioRef.current;
-            const hasTrack = !!currentSong && !isNowPlayingStageActive;
+            // 有曲目即有卡：播放/暂停状态由 playing 字段表达，卡片常驻与否只跟曲目挂钩。
+            // 此前把全屏舞台页激活折进 hasTrack，进全屏页引起的快照推送会带 hasTrack:false，
+            // 原生收到后立即 stopForeground 撤掉流体云——暂停场景恰恰多发生在全屏页内。
+            const hasTrack = !!currentSong;
             const timeSec = audio && Number.isFinite(audio.currentTime) ? Math.max(0, audio.currentTime) : 0;
             // 歌词/封面从播放 store 现读（不入 effect 依赖），1Hz 快照推送不引发 React 重渲染；
             // 歌词行复用舞台歌词同一取词函数，保证通知卡片与页面歌词一致。
@@ -199,18 +200,26 @@ export const useAndroidPlaybackBridge = ({
         audio?.addEventListener('pause', push);
         audio?.addEventListener('ended', push);
 
-        return () => {
-            audio?.removeEventListener('timeupdate', pushThrottled);
-            audio?.removeEventListener('loadedmetadata', push);
-            audio?.removeEventListener('play', push);
-            audio?.removeEventListener('pause', push);
-            audio?.removeEventListener('ended', push);
-            // 页面卸载/刷新：撤掉媒体通知卡片。
+        // 页面卸载/刷新/WebView 销毁：撤掉媒体通知卡片。只能挂 pagehide，绝不能放进 effect
+        // cleanup——cleanup 在每次依赖变化（暂停/切歌/视图切换）都会执行，届时推空快照会让
+        // 原生 stopForeground 撤卡，随后重推的有效快照也无法立刻复活同一个 MediaSession，
+        // 表现即"暂停后流体云消失"。
+        const handlePageHide = () => {
             try {
                 bridge.setPlaybackSnapshot(JSON.stringify(EMPTY_SNAPSHOT));
             } catch {
                 /* bridge 已随页面销毁，忽略 */
             }
         };
-    }, [audioRef, currentSong, getDisplayAudioElement, isNowPlayingStageActive, playerState, unknownArtistLabel]);
+        window.addEventListener('pagehide', handlePageHide);
+
+        return () => {
+            audio?.removeEventListener('timeupdate', pushThrottled);
+            audio?.removeEventListener('loadedmetadata', push);
+            audio?.removeEventListener('play', push);
+            audio?.removeEventListener('pause', push);
+            audio?.removeEventListener('ended', push);
+            window.removeEventListener('pagehide', handlePageHide);
+        };
+    }, [audioRef, currentSong, getDisplayAudioElement, playerState, unknownArtistLabel]);
 };

@@ -76,6 +76,20 @@ const resolve = <T,>(next: React.SetStateAction<T>, previous: T): T => (
     typeof next === 'function' ? (next as (prev: T) => T)(previous) : next
 );
 
+// Cover blob URLs are minted fresh by the cover cache on every change, and nothing else revokes
+// them — a long session used to leak one cover image per track switch, enough to OOM the WebView.
+// This store setter is the single write entry, so the reclamation lives here. The revoke is
+// DELAYED, not immediate: right after a switch the old URL may still be referenced by the frozen
+// transition picture (`transitionDisplay.coverUrl`, held for the length of a blend) and by media
+// card artwork rendered from the previous snapshot. By the delay elapses the blend is over, the
+// element has painted, and nothing reads the URL again.
+const COVER_REVOKE_DELAY_MS = 8000;
+
+const revokeCoverUrlLater = (url: string | null | undefined) => {
+    if (typeof url !== 'string' || !url.startsWith('blob:')) return;
+    window.setTimeout(() => URL.revokeObjectURL(url), COVER_REVOKE_DELAY_MS);
+};
+
 const readStoredReplayGainMode = (): ReplayGainMode => {
     if (typeof window === 'undefined') return 'off';
     const saved = localStorage.getItem('local_replaygain_mode');
@@ -104,7 +118,17 @@ export const usePlaybackStore = create<PlaybackStoreState>((set, get) => ({
     // pipeline (createLyricsSetter), so functional updates here never re-transform.
     setLyricsState: (next) => set({ lyrics: resolve(next, get().lyrics) }),
     setActiveLocalLyricsSource: (next) => set({ activeLocalLyricsSource: resolve(next, get().activeLocalLyricsSource) }),
-    setCachedCoverUrl: (next) => set({ cachedCoverUrl: resolve(next, get().cachedCoverUrl) }),
+    setCachedCoverUrl: (next) => {
+        const previous = get().cachedCoverUrl;
+        const resolved = resolve(next, previous);
+        // Managed write: retire the replaced blob URL. Functional updates that keep the current
+        // URL resolve to the same string and skip the revoke, so a still-displayed URL is never
+        // pulled out from under the UI.
+        if (previous && previous !== resolved) {
+            revokeCoverUrlLater(previous);
+        }
+        set({ cachedCoverUrl: resolved });
+    },
     setDuration: (next) => set({ duration: resolve(next, get().duration) }),
     setPlayerState: (next) => set({ playerState: resolve(next, get().playerState) }),
     setCurrentLineIndex: (next) => set({ currentLineIndex: resolve(next, get().currentLineIndex) }),

@@ -1637,7 +1637,7 @@ export default {
     "voiceInputPause": "语音输入时暂停播放",
     "voiceInputPauseDesc": "检测到系统语音输入（如 Win+H 语音键入、输入法语音转文字）或其他应用占用麦克风时自动暂停播放，结束后自动恢复。仅 Windows 桌面端生效。",
     "preventDisplaySleepDuringPlayback": "播放时阻止休眠",
-    "preventDisplaySleepDuringPlaybackDesc": "仅桌面端生效。音乐播放期间保持显示器唤醒，暂停或停止播放后恢复系统原有的休眠行为。",
+    "preventDisplaySleepDuringPlaybackDesc": "音乐播放期间保持屏幕常亮（桌面端与安卓应用生效），暂停或停止播放后恢复系统原有的休眠行为。",
     "enableModSystem": "模组系统",
     "enableModSystemDesc": "仅桌面端生效。开启后「模组」命令与模组管理面板才会出现，加载器也才会扫描并加载模组；关闭时不会加载任何模组代码。",
     "enableModSystemDescSub": "模组以应用的完整权限运行，启用单个模组时仍需在弹窗中逐一确认。API 尚未定稿，后续版本可能变更。",

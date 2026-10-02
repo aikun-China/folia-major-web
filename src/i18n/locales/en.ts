@@ -1638,7 +1638,7 @@ export default {
     "voiceInputPause": "Pause playback during voice input",
     "voiceInputPauseDesc": "Automatically pause playback while system voice input (Win+H voice typing, IME speech-to-text) or another app uses the microphone, and resume afterwards. Windows desktop only.",
     "preventDisplaySleepDuringPlayback": "Prevent display sleep during playback",
-    "preventDisplaySleepDuringPlaybackDesc": "Desktop only. Keep the display awake while music is playing; normal sleep behavior resumes when playback pauses or stops.",
+    "preventDisplaySleepDuringPlaybackDesc": "Keep the screen awake while music is playing (desktop and the Android app); normal sleep behavior resumes when playback pauses or stops.",
     "enableModSystem": "Mod system",
     "enableModSystemDesc": "Desktop only. Turns on the Mods command and the mod manager, and lets the loader discover and load mods; while it is off no mod code is loaded at all.",
     "enableModSystemDescSub": "Mods run with the full privileges of the app, and each one still has to be confirmed individually before it runs. The API is not final and may change in future versions.",
