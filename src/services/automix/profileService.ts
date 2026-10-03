@@ -4,6 +4,7 @@ import { saveAudioBlob } from '../audioCache';
 import { getFromCache, saveToCache } from '../db';
 import { getCachedSongAudioBlob } from '../onlineMusic/resourceCache';
 import { getSongResourceCacheKey } from '../onlineMusic/resourceKeys';
+import { shouldSkipAudioRefetch } from '../playedTrackCache';
 import { getPlaybackAnalysisKey, getPlaybackRepresentation } from '../playbackRecovery/representationRegistry';
 import { analyseTrackOffThread, melSpectrogramOffThread } from './analysisOffThread';
 import { analyseBeatGrid, canRunBeatThis } from './beatThis';
@@ -237,11 +238,11 @@ const readBytes = async (
         || getPlaybackSourceRef(song).kind !== 'online';
 
     try {
-        if (!isLocal && !enableMediaCache) {
-            // Song caching is off, so the full file would be bandwidth nobody agreed to. Take the
-            // front of it instead: less than the transition is worth, and it still answers the
-            // questions about how this track STARTS - which is what the chooser needs from the
-            // track it is blending into.
+        if (!isLocal && (!enableMediaCache || shouldSkipAudioRefetch())) {
+            // Song caching is off, or the network gate refuses the full download (mobile devices,
+            // metered connections). Take the front of it instead: less than the transition is
+            // worth, and it still answers the questions about how this track STARTS - which is
+            // what the chooser needs from the track it is blending into.
             if (hasStoredPartial) return { skipped: '' };
             return await readPrefix(audioUrl);
         }

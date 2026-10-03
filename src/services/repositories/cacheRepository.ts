@@ -214,3 +214,34 @@ export const clearBrowserCacheByCategory = async (category: CacheCategory): Prom
     }));
   });
 };
+
+/**
+ * Drops the oldest cached audio until the media_cache table fits `limitBytes`.
+ *
+ * The Electron file cache prunes inside the main process — its ceiling rides along with every
+ * save — but the IndexedDB tables had no ceiling at all, and on an APK WebView the difference
+ * shows up as the "application data" figure in system settings, growing until someone noticed.
+ * Scoped to `audio_` keys: covers are small enough to ignore, and every other category is
+ * dropped by its own rules (analysis stays true whether or not its bytes are still here).
+ * `limitBytes <= 0` keeps the settings promise that zero means no ceiling.
+ *
+ * Rows are read whole, exactly like every other scan in this file (`getEntrySize` needs `.size`);
+ * in Chromium that materialises Blob references with their metadata, not the decoded bytes.
+ */
+export const pruneAudioCacheToLimit = async (limitBytes: number): Promise<void> => {
+  if (!(limitBytes > 0)) return;
+  const table = getTable('media_cache');
+  const sized = (await table.toArray())
+    .filter(entry => entry.key.startsWith('audio_'))
+    .map(entry => ({ key: entry.key, size: getEntrySize(entry), timestamp: entry.timestamp }))
+    .sort((a, b) => a.timestamp - b.timestamp);
+  let total = sized.reduce((sum, entry) => sum + entry.size, 0);
+  if (total <= limitBytes) return;
+  const doomed: string[] = [];
+  for (const entry of sized) {
+    if (total <= limitBytes) break;
+    doomed.push(entry.key);
+    total -= entry.size;
+  }
+  if (doomed.length > 0) await table.bulkDelete(doomed);
+};

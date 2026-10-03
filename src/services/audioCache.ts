@@ -1,4 +1,4 @@
-import { getFromCache, removeFromCache, saveToCache } from './db';
+import { getFromCache, pruneAudioCacheToLimit, removeFromCache, saveToCache } from './db';
 import { isBlob } from '../utils/blobGuards';
 import { useAudioSettingsStore } from '../stores/useAudioSettingsStore';
 
@@ -106,6 +106,10 @@ export async function saveAudioBlob(cacheKey: string, blob: Blob): Promise<void>
     await window.electron!.saveAudioCache(cacheKey, buffer, blob.type || 'audio/mpeg', cacheLimitBytes());
   } else {
     await saveToCache(cacheKey, blob);
+    // The Electron branch above prunes inside the main process, its limit riding along with the
+    // save. The IndexedDB path used to grow without bound. Prune after the write, fire-and-forget,
+    // so a save never waits on a sweep.
+    void pruneBrowserAudioCache(cacheLimitBytes());
   }
 
   // After the write, and over a copy: a listener that throws must not fail a write that has already
@@ -117,4 +121,30 @@ export async function saveAudioBlob(cacheKey: string, blob: Blob): Promise<void>
       console.warn('[AudioCache] a cache-write listener threw', error);
     }
   }
+}
+
+/**
+ * The browser counterpart of the Electron cache ceiling: IndexedDB had none, and on a phone the
+ * difference is counted by the system settings app. Mutual exclusion keeps concurrent writes from
+ * racing two sweeps; failures are logged and retried by the next write.
+ */
+let browserPruneRunning = false;
+const pruneBrowserAudioCache = async (limitBytes: number): Promise<void> => {
+    if (browserPruneRunning || !(limitBytes > 0)) return;
+    browserPruneRunning = true;
+    try {
+        await pruneAudioCacheToLimit(limitBytes);
+    } catch (error) {
+        console.warn('[AudioCache] browser cache prune failed', error);
+    } finally {
+        browserPruneRunning = false;
+    }
+};
+
+// One startup sweep for the stockpiled cache. Mobile audio writes are gated off entirely (see
+// playedTrackCache), so the write-time prune would otherwise never fire again and a phone's
+// stockpile would sit there forever even after the ceiling was lowered in settings. Deferred well
+// past launch, and only where an IndexedDB cache exists at all.
+if (typeof window !== 'undefined' && !isElectronAudioCacheAvailable()) {
+    window.setTimeout(() => { void pruneBrowserAudioCache(cacheLimitBytes()); }, 10000);
 }

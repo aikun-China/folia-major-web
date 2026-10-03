@@ -14,6 +14,7 @@ import {
   getBrowserCacheUsage,
   getBrowserCacheUsageByCategory,
   getCacheKeysByPrefix,
+  pruneAudioCacheToLimit,
   putCacheEntry,
   readCacheEntriesByKey,
   readCacheEntriesByPrefix,
@@ -40,7 +41,7 @@ import {
 // Keeps the historical storage API stable while delegating every IndexedDB operation to Dexie repositories.
 
 export type { CacheData, SessionData } from './dbTypes';
-export { getCacheKeysByPrefix, removeCacheEntries, removeCacheEntriesByPrefix };
+export { getCacheKeysByPrefix, pruneAudioCacheToLimit, removeCacheEntries, removeCacheEntriesByPrefix };
 
 const hasElectronAudioCacheBridge = () => (
   typeof window !== 'undefined' &&

@@ -13,12 +13,23 @@ export type PlayedTrackCacheResult = { audio: boolean; cover: boolean };
 
 const NOTHING_WRITTEN: PlayedTrackCacheResult = { audio: false, cover: false };
 
-// The full-song refetch is the largest single download this path can trigger, so on metered
-// networks it is skipped: the track still plays fine, only the offline-again convenience is
-// given up. `saveData` is the user's own metered flag; `type: 'cellular'` catches mobile
-// data directly. Low effective types are treated as metered too — but NOT '4g', which desktop
-// Chrome reports even on ethernet, so including it would wrongly gate desktop caching.
-const shouldSkipAudioRefetch = (): boolean => {
+// The full-song refetch is the largest single download this path can trigger, so it is gated hard.
+// Metered networks skip it: `saveData` is the user's own metered flag, `type: 'cellular'` catches
+// mobile data directly, and low effective types are treated as metered too — but NOT '4g', which
+// desktop Chrome reports even on ethernet, so including it would wrongly gate desktop caching.
+// Mobile devices skip it outright, for two compounding reasons. First the checks above cannot be
+// trusted there: Android WebViews often report no `type` at all, and `effectiveType` reads '4g'
+// on cellular just like desktop ethernet. Second, on a phone the double download lands on BOTH
+// the metered plan and the storage budget — a real-world device counted 6 GB of traffic and
+// 2 GB of "application data" before anyone noticed, and a cached track repays neither: it saves
+// one streamed play on a repeat but costs a full second download plus permanent storage.
+// Automix's analysis path reuses this gate for the same reason. Exported for it.
+const isMobileDevice = (): boolean => (
+    /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent)
+);
+
+export const shouldSkipAudioRefetch = (): boolean => {
+    if (isMobileDevice()) return true;
     const connection = (navigator as Navigator & {
         connection?: { saveData?: boolean; type?: string; effectiveType?: string };
     }).connection;
