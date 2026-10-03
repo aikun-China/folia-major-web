@@ -112,6 +112,52 @@
         animation-delay: -550ms;
       }
 
+      #app-splash .app-splash-status {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: clamp(28px, 6vh, 64px);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+        opacity: 0;
+        transition: opacity 400ms ease;
+        pointer-events: none;
+      }
+
+      #app-splash .app-splash-status.is-visible {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      #app-splash .app-splash-status-text {
+        margin: 0;
+        font-size: 13px;
+        line-height: 1.6;
+        letter-spacing: 0.03em;
+        color: rgba(255, 255, 255, 0.62);
+        text-align: center;
+        padding: 0 24px;
+      }
+
+      #app-splash .app-splash-retry {
+        appearance: none;
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        border-radius: 999px;
+        background-color: transparent;
+        color: #ffffff;
+        font-family: inherit;
+        font-size: 13px;
+        letter-spacing: 0.06em;
+        padding: 8px 28px;
+        cursor: pointer;
+      }
+
+      #app-splash .app-splash-retry:active {
+        background-color: rgba(255, 255, 255, 0.14);
+      }
+
       @keyframes app-splash-in {
         to {
           opacity: 1;
@@ -161,6 +207,11 @@
           <span></span>
           <span></span>
           <span></span>
+          <span></span>
+        </div>
+        <div class="app-splash-status" id="app-splash-status">
+          <p class="app-splash-status-text"></p>
+          <button type="button" class="app-splash-retry" hidden></button>
         </div>
       </div>
     </div>
@@ -207,6 +258,46 @@
         } catch (error) {
           // 随机化失败无所谓，CSS 默认值已经能跑一条波形。
         }
+      })();
+    </script>
+    <script>
+      (function () {
+        var splash = document.getElementById('app-splash');
+        if (!splash) return;
+        var statusEl = document.getElementById('app-splash-status');
+        if (!statusEl) return;
+        var textEl = statusEl.querySelector('.app-splash-status-text');
+        var retryBtn = statusEl.querySelector('.app-splash-retry');
+        if (!textEl || !retryBtn) return;
+        var isZh = (navigator.language || '').toLowerCase().indexOf('zh') === 0;
+        var copy = {
+          waiting: isZh ? '仍在加载，网络似乎有点慢…' : 'Still loading — the network seems slow…',
+          retryAdvice: isZh ? '加载较慢：可检查网络后稍候，或点击重试' : 'Loading slowly: check your network, keep waiting, or retry.',
+          loadError: isZh ? '资源加载失败，请检查网络后重试' : 'Failed to load resources. Check your network and retry.',
+          retry: isZh ? '重试' : 'Retry'
+        };
+        retryBtn.textContent = copy.retry;
+        var alive = function () {
+          return splash.isConnected && !splash.classList.contains('is-hiding');
+        };
+        var show = function (text, withRetry) {
+          if (!alive()) return;
+          textEl.textContent = text;
+          if (withRetry) {
+            retryBtn.hidden = false;
+          }
+          statusEl.classList.add('is-visible');
+        };
+        window.setTimeout(function () { show(copy.waiting, false); }, 6000);
+        window.setTimeout(function () { show(copy.retryAdvice, true); }, 18000);
+        window.addEventListener('error', function (event) {
+          var tag = event.target && event.target.tagName;
+          if (tag !== 'SCRIPT' && tag !== 'LINK') return;
+          show(copy.loadError, true);
+        }, true);
+        retryBtn.addEventListener('click', function () {
+          window.location.reload();
+        });
       })();
     </script>
     <div id="root"></div>
