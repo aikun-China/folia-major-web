@@ -7,7 +7,10 @@
     <meta http-equiv="Expires" content="0" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="referrer" content="no-referrer" />
-    <meta name="description" content="一个动态歌词播放器，支持 AI 主题生成" />
+    <meta name="robots" content="index, follow" />
+    <meta name="description" content="Folia 是一款支持 AI 主题生成的动态歌词播放器，让歌词随着音乐焕然一新。提供 Android APK 与桌面端，支持本地音乐与在线音源。" />
+    <meta name="keywords" content="Folia,动态歌词播放器,AI 主题歌词,歌词播放器,音乐播放器,AI 歌词生成" />
+    <meta name="author" content="chthollyphile" />
     <meta name="theme-color" content="#09090b" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -15,7 +18,21 @@
     <meta name="apple-mobile-web-app-title" content="Folia" />
     <link rel="icon" type="image/svg+xml" href="/icon.svg" />
     <link rel="apple-touch-icon" href="/icon.svg" />
-    <title>Folia</title>
+    <link rel="canonical" href="https://music.aikun-bili.top/" />
+    <title>Folia - 动态歌词播放器</title>
+    <!-- Open Graph -->
+    <meta property="og:title" content="Folia - 动态歌词播放器" />
+    <meta property="og:description" content="Folia 是一款支持 AI 主题生成的动态歌词播放器，让歌词随着音乐焕然一新。" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://music.aikun-bili.top/" />
+    <meta property="og:image" content="https://music.aikun-bili.top/icon.svg" />
+    <meta property="og:site_name" content="Folia" />
+    <meta property="og:locale" content="zh_CN" />
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Folia - 动态歌词播放器" />
+    <meta name="twitter:description" content="Folia 是一款支持 AI 主题生成的动态歌词播放器，让歌词随着音乐焕然一新。" />
+    <meta name="twitter:image" content="https://music.aikun-bili.top/icon.svg" />
     <script>
       // 立即注销可能残留的旧 PWA Service Worker（sw.js），避免缓存旧版本导致显示旧加载页。
       // 之前 dev server 启用了 PWA，旧 SW 缓存了 dev 资源，切换生产构建后会先返回旧缓存。
@@ -187,7 +204,30 @@
           opacity: 0.5;
         }
       }
-    </style>
+  </style>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Folia",
+    "applicationCategory": "MusicApplication",
+    "operatingSystem": "Android, Windows, macOS, Linux",
+    "description": "Folia 是一款支持 AI 主题生成的动态歌词播放器，让歌词随着音乐焕然一新。",
+    "url": "https://music.aikun-bili.top/",
+    "image": "https://music.aikun-bili.top/icon.svg",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "CNY"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "chthollyphile"
+    },
+    "license": "https://spdx.org/licenses/AGPL-3.0",
+    "inLanguage": "zh-CN"
+  }
+  </script>
 </head>
   <body>
     <div id="app-splash" role="status" aria-live="polite" aria-label="Loading Folia">

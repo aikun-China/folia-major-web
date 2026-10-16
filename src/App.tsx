@@ -320,6 +320,17 @@ export default function App() {
         (window as any).__folia_current_time = currentTime;
     }, []);
 
+    // 动态浏览器标签页标题：歌曲名 - 歌手 | Folia
+    useEffect(() => {
+        if (currentSong) {
+            const artists = getSongArtistLabel(currentSong);
+            const title = artists ? `${currentSong.name} - ${artists} | Folia` : `${currentSong.name} | Folia`;
+            document.title = title;
+        } else {
+            document.title = 'Folia - 动态歌词播放器';
+        }
+    }, [currentSong]);
+
     // Progress Bar State
     // Removed isDragging and sliderValue as they are handled by ProgressBar component
 
